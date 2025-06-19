@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: habit-tracker-api
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+# Add your SharePoint or other secrets as additional envVars if needed

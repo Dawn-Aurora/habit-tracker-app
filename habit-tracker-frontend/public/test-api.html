@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Habit Tracker API Test</h1>
+    
+    <div class="card">
+        <h2>API Information</h2>
+        <button id="apiInfoBtn">Get API Info</button>
+        <pre id="apiInfoResult">Results will appear here...</pre>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Get All Habits</h2>
+            <button id="getHabitsBtn">Fetch Habits</button>
+            <pre id="getResult">Results will appear here...</pre>
+        </div>
+        
+        <div class="card">
+            <h2>Create Habit</h2>
+            <div class="form-group">
+                <label for="habitName">Habit Name:</label>
+                <input type="text" id="habitName" placeholder="Enter habit name">
+            </div>
+            <button id="createHabitBtn">Create Habit</button>
+            <pre id="createResult">Results will appear here...</pre>
+        </div>
+        
+        <div class="card">
+            <h2>Update Habit</h2>
+            <div class="form-group">
+                <label for="updateHabitId">Habit ID:</label>
+                <input type="text" id="updateHabitId" placeholder="Enter habit ID">
+            </div>
+            <div class="form-group">
+                <label for="updateHabitName">New Name:</label>
+                <input type="text" id="updateHabitName" placeholder="Enter new habit name">
+            </div>
+            <div class="form-group">
+                <label for="updateCompletedDates">Completed Dates (comma-separated):</label>
+                <input type="text" id="updateCompletedDates" placeholder="e.g., 2025-06-15,2025-06-16">
+            </div>
+            <button id="updateHabitBtn">Update Habit</button>
+            <pre id="updateResult">Results will appear here...</pre>
+        </div>
+        
+        <div class="card">
+            <h2>Delete Habit</h2>
+            <div class="form-group">
+                <label for="deleteHabitId">Habit ID:</label>
+                <input type="text" id="deleteHabitId" placeholder="Enter habit ID to delete">
+            </div>
+            <button id="deleteHabitBtn">Delete Habit</button>
+            <pre id="deleteResult">Results will appear here...</pre>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:5000';
+        
+        document.getElementById('apiInfoBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${baseUrl}`);
+                const data = await response.json();
+                document.getElementById('apiInfoResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('apiInfoResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('getHabitsBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${baseUrl}/habits`);
+                const data = await response.json();
+                document.getElementById('getResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('getResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('createHabitBtn').addEventListener('click', async () => {
+            const name = document.getElementById('habitName').value;
+            try {
+                const response = await fetch(`${baseUrl}/habits`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name })
+                });
+                const data = await response.json();
+                document.getElementById('createResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('createResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('updateHabitBtn').addEventListener('click', async () => {
+            const id = document.getElementById('updateHabitId').value;
+            const name = document.getElementById('updateHabitName').value;
+            const completedDatesStr = document.getElementById('updateCompletedDates').value;
+            const completedDates = completedDatesStr ? completedDatesStr.split(',') : [];
+            
+            try {
+                const response = await fetch(`${baseUrl}/habits/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, completedDates })
+                });
+                const data = await response.json();
+                document.getElementById('updateResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('updateResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('deleteHabitBtn').addEventListener('click', async () => {
+            const id = document.getElementById('deleteHabitId').value;
+            try {
+                const response = await fetch(`${baseUrl}/habits/${id}`, {
+                    method: 'DELETE'
+                });
+                if (response.status === 204) {
+                    document.getElementById('deleteResult').textContent = 'Habit successfully deleted';
+                } else {
+                    const data = await response.json();
+                    document.getElementById('deleteResult').textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                document.getElementById('deleteResult').textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

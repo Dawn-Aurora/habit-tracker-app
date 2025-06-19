@@ -1,8 +1,6 @@
-// Define the Habit interface if not imported from elsewhere
 interface Habit {
     id: number;
     name: string;
-    // Add other properties as needed
 }
 
 class HabitList {
@@ -23,8 +21,6 @@ class HabitList {
     }
 
     render(): void {
-        // Logic to display the list of habits
-        console.log("Rendering habits:", this.habits);
     }
 }
 
