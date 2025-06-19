@@ -13,8 +13,6 @@ class HabitList {
         this.render();
     }
     render() {
-        // Logic to display the list of habits
-        console.log("Rendering habits:", this.habits);
     }
 }
 exports.default = HabitList;

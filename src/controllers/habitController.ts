@@ -64,12 +64,19 @@ const handleError = (error: any, res: Response) => {
     });
 };
 
+function getHabitName(habit: any, fallbackName?: string): string {
+    if (habit.fields && (habit.fields.Name || habit.fields.Title)) {
+        return habit.fields.Name || habit.fields.Title;
+    }
+    return habit.Name || habit.Title || habit.name || fallbackName || '';
+}
+
 export const getHabits = async (req: Request, res: Response) => {
     try {
         const habits = await dataClient.getHabits();
         const transformedHabits = habits.map((habit: any) => ({
             id: habit.id,
-            name: habit.Name || habit.Title || habit.name || '',
+            name: getHabitName(habit),
             completedDates: habit.CompletedDates
                 ? habit.CompletedDates.split(',').filter(Boolean)
                 : habit.completedDates || []
@@ -98,7 +105,7 @@ export const createHabit = async (req: Request, res: Response) => {
         const result = await dataClient.createHabit(sanitizedName);
         const newHabit = {
             id: result.id,
-            name: (result.fields && (result.fields.Name || result.fields.Title)) || result.name || sanitizedName,
+            name: getHabitName(result, sanitizedName),
             completedDates: (result.fields && result.fields.CompletedDates)
                 ? result.fields.CompletedDates.split(',').filter(Boolean)
                 : result.completedDates || []
@@ -132,7 +139,7 @@ export const updateHabit = async (req: Request, res: Response) => {
             status: 'success',
             data: {
                 id: result.id,
-                name: (result.fields?.Name || result.fields?.Title) || result.name || sanitizedName,
+                name: getHabitName(result, sanitizedName),
                 completedDates: (result.fields?.CompletedDates)
                     ? result.fields.CompletedDates.split(',').filter(Boolean)
                     : result.completedDates || []

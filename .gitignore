@@ -7,10 +7,11 @@ habit-tracker-frontend/build/
 coverage/
 habit-tracker-frontend/coverage/
 
+# Environment variables
 .env
+.env.*
 habit-tracker-frontend/.env
-habit-tracker-frontend/.env.production
-habit-tracker-frontend/.env.local
+habit-tracker-frontend/.env.*
 
 .DS_Store
 Thumbs.db

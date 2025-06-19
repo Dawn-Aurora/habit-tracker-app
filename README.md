@@ -45,15 +45,18 @@ Create a `.env` file in the project root with the following variables:
 PORT=5000
 DATA_CLIENT=sharepoint   # Use 'mock' for local development or testing
 # SharePoint credentials (required if using SharePoint)
-TENANT_ID=your-tenant-id
-CLIENT_ID=your-client-id
-CLIENT_SECRET=your-client-secret
-SITE_ID=your-site-id
-LIST_ID=your-list-id
+SHAREPOINT_TENANT_ID=your-tenant-id
+SHAREPOINT_CLIENT_ID=your-client-id
+SHAREPOINT_CLIENT_SECRET=your-client-secret
+SHAREPOINT_SITE_ID=your-site-id
+SHAREPOINT_LIST_ID=your-list-id
 ```
 
 - If `DATA_CLIENT=mock`, the app uses in-memory mock data.
 - If `DATA_CLIENT=sharepoint`, the app connects to SharePoint via Microsoft Graph API.
+
+> **Never commit your `.env` file or any credentials to your repository.**
+> All environment variables should be set in your deployment platform or local `.env` file (which is gitignored).
 
 ## API Endpoints
 - `GET    /habits`         - List all habits
