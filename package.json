@@ -37,6 +37,9 @@
   "author": "Your Name",
   "license": "MIT",
   "keywords": [],
+  "engines": {
+    "node": "20"
+  },
   "resolutions": {
     "@mui/types": "7.1.1"
   }
