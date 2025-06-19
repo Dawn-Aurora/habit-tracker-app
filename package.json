@@ -2,7 +2,7 @@
   "name": "habit-tracker-app",
   "version": "1.0.0",
   "description": "A simple habit tracker application built with TypeScript and Express.",
-  "main": "src/app.ts",
+  "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
     "build": "tsc",
