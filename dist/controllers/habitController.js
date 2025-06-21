@@ -172,10 +172,8 @@ function getHabitName(habit, fallbackName) {
     return habit.Name || habit.Title || habit.name || fallbackName || '';
 }
 const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('DEBUG: getHabits endpoint hit');
     try {
         const habits = yield dataClient.getHabits();
-        console.log('DEBUG: Raw habits from dataClient:', JSON.stringify(habits, null, 2));
         const transformedHabits = habits.map((habit) => {
             return {
                 id: habit.id,
@@ -187,7 +185,6 @@ const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 expectedFrequency: habit.ExpectedFrequency || habit.expectedFrequency || ''
             };
         });
-        console.log('DEBUG: Transformed habits:', JSON.stringify(transformedHabits, null, 2));
         transformedHabits.forEach((habit) => {
             (0, validation_1.validateHabitId)(habit.id);
             (0, validation_1.validateHabitName)(habit.name);
@@ -201,7 +198,6 @@ const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        console.log('DEBUG: getHabits error:', error);
         handleError(error, res);
     }
 });

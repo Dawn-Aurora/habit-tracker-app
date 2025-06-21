@@ -18,12 +18,6 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 app.use(express_1.default.json());
-// Add request logger middleware to log all incoming requests
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-    console.log('Request body:', req.body);
-    next();
-});
 app.get('/', (req, res) => {
     res.json({
         message: 'Habit Tracker API is working',
