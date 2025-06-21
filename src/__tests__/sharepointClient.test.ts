@@ -95,11 +95,19 @@ describe('sharepointClient (unit tests with mocks)', () => {
       id: '2',
     }));
     expect(mockPost).toHaveBeenCalled();
-  });
-
-  it('should update a habit in SharePoint', async () => {
-    mockGet.mockResolvedValueOnce({ value: [{ name: 'Name' }, { name: 'CompletedDates' }] }); // columns
-    mockGet.mockResolvedValueOnce({ fields: { ...realFields, Name: 'Old Habit', id: '4' } }); // existing item
+  });  it('should update a habit in SharePoint', async () => {
+    mockGet.mockResolvedValueOnce({ 
+      fields: { 
+        ...realFields, 
+        Name: 'Old Habit', 
+        Title: 'Old Habit',
+        CompletedDates: '',
+        ExpectedFrequency: '',
+        Tags: '',
+        Notes: '[]',
+        id: '4' 
+      } 
+    }); // existing item
     const fakePatchResult = {
       id: '4',
       fields: {

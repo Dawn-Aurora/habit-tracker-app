@@ -56,6 +56,9 @@
             box-sizing: border-box;
             margin-top: 5px;
         }
+        .habit {
+            margin-bottom: 1em;
+        }
     </style>
 </head>
 <body>
@@ -63,19 +66,23 @@
     
     <div class="container">
         <div class="card">
-            <h2>Get All Habits</h2>
-            <button id="getHabitsBtn">Fetch Habits</button>
-            <pre id="getResult">Results will appear here...</pre>
+            <h2>Add Habit</h2>
+            <div class="form-group">
+                <label for="name">Habit Name:</label>
+                <input type="text" id="name" placeholder="Enter habit name">
+            </div>
+            <div class="form-group">
+                <label for="frequency">Expected Frequency (e.g., 3 for 3 times/week):</label>
+                <input type="number" id="frequency" min="1" placeholder="Enter number">
+            </div>
+            <button id="addHabitBtn">Add Habit</button>
+            <pre id="addResult">Results will appear here...</pre>
         </div>
         
         <div class="card">
-            <h2>Create Habit</h2>
-            <div class="form-group">
-                <label for="habitName">Habit Name:</label>
-                <input type="text" id="habitName" placeholder="Enter habit name">
-            </div>
-            <button id="createHabitBtn">Create Habit</button>
-            <pre id="createResult">Results will appear here...</pre>
+            <h2>Get All Habits</h2>
+            <button id="getHabitsBtn">Fetch Habits</button>
+            <pre id="getResult">Results will appear here...</pre>
         </div>
         
         <div class="card">
@@ -92,6 +99,10 @@
                 <label for="updateCompletedDates">Completed Dates (comma-separated):</label>
                 <input type="text" id="updateCompletedDates" placeholder="e.g., 2025-06-15,2025-06-16">
             </div>
+            <div class="form-group">
+                <label for="updateFrequency">Expected Frequency (e.g., 3 for 3 times/week):</label>
+                <input type="number" id="updateFrequency" min="1" placeholder="Enter number">
+            </div>
             <button id="updateHabitBtn">Update Habit</button>
             <pre id="updateResult">Results will appear here...</pre>
         </div>
@@ -105,7 +116,73 @@
             <button id="deleteHabitBtn">Delete Habit</button>
             <pre id="deleteResult">Results will appear here...</pre>
         </div>
+        
+        <div class="card">
+            <h2>Mark Habit as Completed</h2>
+            <div class="form-group">
+                <label for="completeHabitId">Habit ID:</label>
+                <input type="text" id="completeHabitId" placeholder="Enter habit ID">
+            </div>
+            <div class="form-group">
+                <label for="completeDate">Date (YYYY-MM-DD):</label>
+                <input type="text" id="completeDate" placeholder="e.g., 2025-06-20">
+            </div>
+            <button id="completeHabitBtn">Mark as Completed</button>
+            <pre id="completeResult">Results will appear here...</pre>
+        </div>
+        
+        <div class="card">
+            <h2>Add Note to Habit</h2>
+            <div class="form-group">
+                <label for="noteHabitId">Habit ID:</label>
+                <input type="text" id="noteHabitId" placeholder="Enter habit ID">
+            </div>
+            <div class="form-group">
+                <label for="habitNote">Note:</label>
+                <textarea id="habitNote" placeholder="Enter your note"></textarea>
+            </div>
+            <button id="addNoteBtn">Add Note</button>
+            <pre id="noteResult">Results will appear here...</pre>
+        </div>
+        
+        <div class="card">
+            <h2>Update Tags</h2>
+            <div class="form-group">
+                <label for="tagsHabitId">Habit ID:</label>
+                <input type="text" id="tagsHabitId" placeholder="Enter habit ID">
+            </div>
+            <div class="form-group">
+                <label for="tagsInput">Tags (comma-separated):</label>
+                <input type="text" id="tagsInput" placeholder="e.g., health,reading">
+            </div>
+            <button id="updateTagsBtn">Update Tags</button>
+            <pre id="tagsResult">Results will appear here...</pre>
+        </div>
+        
+        <div class="card">
+            <h2>Set Expected Frequency</h2>
+            <div class="form-group">
+                <label for="freqHabitId">Habit ID:</label>
+                <input type="text" id="freqHabitId" placeholder="Enter habit ID">
+            </div>
+            <div class="form-group">
+                <label for="expectedFrequency">Expected Frequency (e.g., 3 for 3 times/week):</label>
+                <input type="number" id="expectedFrequency" min="1" placeholder="Enter number">
+            </div>
+            <button id="setFrequencyBtn">Set Frequency</button>
+            <pre id="freqResult">Results will appear here...</pre>
+        </div>
+        <div class="card">
+            <h2>Mark Habit as Complete (Now)</h2>
+            <div class="form-group">
+                <label for="markNowHabitId">Habit ID:</label>
+                <input type="text" id="markNowHabitId" placeholder="Enter habit ID">
+            </div>
+            <button id="markNowBtn">Mark Complete (Now)</button>
+            <pre id="markNowResult">Results will appear here...</pre>
+        </div>
     </div>
+    <div id="habits"></div>
 
     <script>
         const baseUrl = 'http://localhost:5000';
@@ -114,26 +191,37 @@
             try {
                 const response = await fetch(`${baseUrl}/habits`);
                 const data = await response.json();
-                document.getElementById('getResult').textContent = JSON.stringify(data, null, 2);
+                // Format each habit to show all fields
+                if (data && data.data && Array.isArray(data.data)) {
+                    const formatted = data.data.map(habit => {
+                        return `ID: ${habit.id}\nName: ${habit.name}\nCompleted Dates: ${habit.completedDates && habit.completedDates.length ? habit.completedDates.join(', ') : ''}\nTags: ${habit.tags && habit.tags.length ? habit.tags.join(', ') : ''}\nNotes: ${habit.notes && habit.notes.length ? JSON.stringify(habit.notes) : ''}\nExpected Frequency: ${habit.expectedFrequency || ''}`;
+                    }).join('\n\n---\n\n');
+                    document.getElementById('getResult').textContent = formatted;
+                } else {
+                    document.getElementById('getResult').textContent = JSON.stringify(data, null, 2);
+                }
             } catch (error) {
                 document.getElementById('getResult').textContent = `Error: ${error.message}`;
             }
         });
         
-        document.getElementById('createHabitBtn').addEventListener('click', async () => {
-            const name = document.getElementById('habitName').value;
+        document.getElementById('addHabitBtn').addEventListener('click', async () => {
+            const name = document.getElementById('name').value;
+            const frequency = document.getElementById('frequency').value;
             try {
                 const response = await fetch(`${baseUrl}/habits`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name })
+                    body: JSON.stringify({ name, expectedFrequency: Number(frequency) })
                 });
                 const data = await response.json();
-                document.getElementById('createResult').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('addResult').textContent = JSON.stringify(data, null, 2);
+                // Refresh habits list
+                document.getElementById('getHabitsBtn').click();
             } catch (error) {
-                document.getElementById('createResult').textContent = `Error: ${error.message}`;
+                document.getElementById('addResult').textContent = `Error: ${error.message}`;
             }
         });
         
@@ -142,6 +230,7 @@
             const name = document.getElementById('updateHabitName').value;
             const completedDatesStr = document.getElementById('updateCompletedDates').value;
             const completedDates = completedDatesStr ? completedDatesStr.split(',') : [];
+            const expectedFrequency = document.getElementById('updateFrequency').value;
             
             try {
                 const response = await fetch(`${baseUrl}/habits/${id}`, {
@@ -149,9 +238,14 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name, completedDates })
+                    body: JSON.stringify({ ...(name && { name }), ...(completedDates.length > 0 && { completedDates }), ...(expectedFrequency && { expectedFrequency: Number(expectedFrequency) }) })
                 });
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    data = { error: 'Invalid JSON response', status: response.status };
+                }
                 document.getElementById('updateResult').textContent = JSON.stringify(data, null, 2);
             } catch (error) {
                 document.getElementById('updateResult').textContent = `Error: ${error.message}`;
@@ -174,6 +268,150 @@
                 document.getElementById('deleteResult').textContent = `Error: ${error.message}`;
             }
         });
+        
+        document.getElementById('completeHabitBtn').addEventListener('click', async () => {
+            const id = document.getElementById('completeHabitId').value;
+            const date = document.getElementById('completeDate').value;
+            try {
+                const response = await fetch(`${baseUrl}/habits/${id}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date })
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    data = { error: 'Invalid JSON response', status: response.status };
+                }
+                document.getElementById('completeResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('completeResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('addNoteBtn').addEventListener('click', async () => {
+            const id = document.getElementById('noteHabitId').value;
+            const note = document.getElementById('habitNote').value;
+            try {
+                const response = await fetch(`${baseUrl}/habits/${id}/note`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note })
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    data = { error: 'Invalid JSON response', status: response.status };
+                }
+                document.getElementById('noteResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('noteResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('updateTagsBtn').addEventListener('click', async () => {
+            const id = document.getElementById('tagsHabitId').value;
+            const tagsStr = document.getElementById('tagsInput').value;
+            const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+            try {
+                const response = await fetch(`${baseUrl}/habits/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tags })
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    data = { error: 'Invalid JSON response', status: response.status };
+                }
+                document.getElementById('tagsResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('tagsResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        document.getElementById('setFrequencyBtn').addEventListener('click', async () => {
+            const id = document.getElementById('freqHabitId').value;
+            const expectedFrequency = document.getElementById('expectedFrequency').value;
+            try {
+                const response = await fetch(`${baseUrl}/habits/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expectedFrequency: Number(expectedFrequency) })
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    data = { error: 'Invalid JSON response', status: response.status };
+                }
+                document.getElementById('freqResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('freqResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        document.getElementById('markNowBtn').addEventListener('click', async () => {
+            const id = document.getElementById('markNowHabitId').value;
+            const today = new Date().toISOString().slice(0, 10);
+            try {
+                const response = await fetch(`${baseUrl}/habits/${id}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: today })
+                });
+                let data;
+                try {
+                    data = await response.json();
+                } catch (err) {
+                    data = { error: 'Invalid JSON response', status: response.status };
+                }
+                document.getElementById('markNowResult').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('markNowResult').textContent = `Error: ${error.message}`;
+            }
+        });
+        
+        // Fetch and display habits on initial load
+        (async () => {
+            await fetchHabits();
+        })();
+        
+        async function fetchHabits() {
+            try {
+                const response = await fetch(`${baseUrl}/habits`);
+                const data = await response.json();
+                const habitsDiv = document.getElementById('habits');
+                habitsDiv.innerHTML = '';
+                data.data.forEach(habit => {
+                    const div = document.createElement('div');
+                    div.className = 'habit';
+                    div.innerHTML = `
+                      <b>${habit.name}</b> (${habit.expectedFrequency || ''})<br>
+                      Completed: ${habit.completedDates && habit.completedDates.length ? habit.completedDates.join(', ') : 'None'}<br>
+                      <button onclick="markComplete('${habit.id}')">Mark complete</button>
+                    `;
+                    habitsDiv.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error fetching habits:', error);
+            }
+        }
+
+        async function markComplete(id) {
+            try {
+                await fetch(`http://localhost:5000/habits/${id}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: new Date().toISOString().slice(0, 10) })
+                });
+                fetchHabits();
+            } catch (error) {
+                console.error('Error marking habit as complete:', error);
+            }
+        }
     </script>
 </body>
 </html>

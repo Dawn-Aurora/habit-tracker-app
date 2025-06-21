@@ -45,17 +45,59 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteHabit = exports.updateHabit = exports.createHabit = exports.getHabits = void 0;
+exports.getHabitMetrics = exports.getHabitsByTag = exports.addHabitNote = exports.markHabitCompleted = exports.deleteHabit = exports.updateHabit = exports.createHabit = exports.getHabits = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const mockDataClient = __importStar(require("../mockDataClient"));
 const sharepointClient = __importStar(require("../sharepointClient"));
-const dataClient = process.env.DATA_CLIENT === 'mock'
+// Enhanced fallback logic: try SharePoint, fallback to mock on error
+const useMock = process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DATA === 'true';
+const dataClient = useMock
     ? mockDataClient
-    : sharepointClient;
+    : {
+        getHabits() {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    return yield sharepointClient.getHabits();
+                }
+                catch (e) {
+                    return yield mockDataClient.getHabits();
+                }
+            });
+        },
+        createHabit(name, completedDate, completedDatesStr, expectedFrequency) {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    return yield sharepointClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
+                }
+                catch (e) {
+                    return yield mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
+                }
+            });
+        },
+        updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency) {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    return yield sharepointClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
+                }
+                catch (e) {
+                    return yield mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
+                }
+            });
+        },
+        deleteHabit(id) {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    return yield sharepointClient.deleteHabit(id);
+                }
+                catch (e) {
+                    return yield mockDataClient.deleteHabit(id);
+                }
+            });
+        }
+    };
 const validation_1 = require("../utils/validation");
 const handleError = (error, res) => {
-    console.error('Error:', error);
     if (error instanceof validation_1.ValidationError) {
         return res.status(400).json({
             status: 'error',
@@ -84,6 +126,45 @@ const handleError = (error, res) => {
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
 };
+// Helper function to safely parse JSON or return empty array
+const safeJsonParse = (value, fallback = []) => {
+    if (!value || value === '""' || value === '=&quot;&quot;' || value === '[]')
+        return fallback;
+    try {
+        return JSON.parse(value);
+    }
+    catch (e) {
+        console.log('JSON parse error for value:', value, 'Error:', e.message);
+        return fallback;
+    }
+};
+// Helper function to safely split strings or return empty array
+const safeSplit = (value, fallback = []) => {
+    if (!value || value === '""' || value === '=&quot;&quot;')
+        return fallback;
+    if (Array.isArray(value))
+        return value;
+    return value.split(',').filter(Boolean);
+};
+// Helper function to get existing field value safely
+const getExistingValue = (field, habit) => {
+    const spField = habit[field] || habit[field.charAt(0).toUpperCase() + field.slice(1)];
+    if (spField && spField !== '=&quot;&quot;' && spField !== '""') {
+        if (field === 'notes' || field === 'Notes') {
+            try {
+                return typeof spField === 'string' ? JSON.parse(spField) : spField;
+            }
+            catch (e) {
+                return [];
+            }
+        }
+        else if (field === 'tags' || field === 'Tags' || field === 'completedDates' || field === 'CompletedDates') {
+            return Array.isArray(spField) ? spField : (spField ? spField.split(',').filter(Boolean) : []);
+        }
+        return spField;
+    }
+    return field === 'notes' || field === 'tags' || field === 'completedDates' ? [] : '';
+};
 function getHabitName(habit, fallbackName) {
     if (habit.fields && (habit.fields.Name || habit.fields.Title)) {
         return habit.fields.Name || habit.fields.Title;
@@ -91,15 +172,22 @@ function getHabitName(habit, fallbackName) {
     return habit.Name || habit.Title || habit.name || fallbackName || '';
 }
 const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('DEBUG: getHabits endpoint hit');
     try {
         const habits = yield dataClient.getHabits();
-        const transformedHabits = habits.map((habit) => ({
-            id: habit.id,
-            name: getHabitName(habit),
-            completedDates: habit.CompletedDates
-                ? habit.CompletedDates.split(',').filter(Boolean)
-                : habit.completedDates || []
-        }));
+        console.log('DEBUG: Raw habits from dataClient:', JSON.stringify(habits, null, 2));
+        const transformedHabits = habits.map((habit) => {
+            return {
+                id: habit.id,
+                name: getHabitName(habit),
+                completedDates: habit.CompletedDates ? safeSplit(habit.CompletedDates) : habit.completedDates || [],
+                tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
+                notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
+                startDate: habit.StartDate || habit.startDate || '',
+                expectedFrequency: habit.ExpectedFrequency || habit.expectedFrequency || ''
+            };
+        });
+        console.log('DEBUG: Transformed habits:', JSON.stringify(transformedHabits, null, 2));
         transformedHabits.forEach((habit) => {
             (0, validation_1.validateHabitId)(habit.id);
             (0, validation_1.validateHabitName)(habit.name);
@@ -113,22 +201,25 @@ const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
+        console.log('DEBUG: getHabits error:', error);
         handleError(error, res);
     }
 });
 exports.getHabits = getHabits;
 const createHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name } = req.body;
+        const { name, frequency } = req.body;
         (0, validation_1.validateHabitName)(name);
         const sanitizedName = (0, validation_1.sanitizeHabitName)(name);
-        const result = yield dataClient.createHabit(sanitizedName);
+        // Pass frequency to dataClient as expectedFrequency
+        const result = yield dataClient.createHabit(sanitizedName, undefined, "", "", "[]", frequency);
         const newHabit = {
             id: result.id,
             name: getHabitName(result, sanitizedName),
             completedDates: (result.fields && result.fields.CompletedDates)
                 ? result.fields.CompletedDates.split(',').filter(Boolean)
-                : result.completedDates || []
+                : result.completedDates || [],
+            expectedFrequency: result.expectedFrequency || frequency || ''
         };
         (0, validation_1.validateHabitId)(newHabit.id);
         (0, validation_1.validateHabitName)(newHabit.name);
@@ -143,28 +234,50 @@ const createHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.createHabit = createHabit;
 const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
     try {
         const { id } = req.params;
-        const { name, completedDates } = req.body;
+        const { name, completedDates, tags, notes, expectedFrequency } = req.body;
         (0, validation_1.validateHabitId)(id);
-        if (name !== undefined) {
+        // Fetch the current habit to preserve existing fields
+        const currentHabit = (yield dataClient.getHabits()).find((h) => h.id === id);
+        if (!currentHabit)
+            throw new validation_1.NotFoundError('Habit not found');
+        // Only validate name if provided and not blank
+        if (name !== undefined && name !== "") {
             (0, validation_1.validateHabitName)(name);
         }
         if (completedDates !== undefined) {
             (0, validation_1.validateCompletedDates)(completedDates);
         }
-        const sanitizedName = name ? (0, validation_1.sanitizeHabitName)(name) : undefined;
-        const completedDatesString = completedDates ? completedDates.join(',') : undefined;
-        const result = yield dataClient.updateHabit(id, sanitizedName, completedDatesString);
+        // Preserve existing data if not updating
+        const finalName = name !== undefined ? (0, validation_1.sanitizeHabitName)(name) : getHabitName(currentHabit);
+        const finalCompletedDates = completedDates !== undefined
+            ? (Array.isArray(completedDates) ? completedDates : (completedDates ? completedDates.split(',').filter(Boolean) : []))
+            : getExistingValue('completedDates', currentHabit);
+        const finalTags = tags !== undefined
+            ? (Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map((t) => t.trim()).filter(Boolean) : []))
+            : getExistingValue('tags', currentHabit);
+        const finalNotes = notes !== undefined
+            ? (Array.isArray(notes) ? notes : (notes ? [notes] : []))
+            : getExistingValue('notes', currentHabit);
+        const finalExpectedFrequency = expectedFrequency !== undefined
+            ? String(expectedFrequency)
+            : (currentHabit.ExpectedFrequency || currentHabit.expectedFrequency || '');
+        // Convert arrays to strings for SharePoint
+        const completedDatesStr = finalCompletedDates.join(',');
+        const tagsStr = finalTags.join(',');
+        const notesStr = JSON.stringify(finalNotes);
+        // Update with all fields preserved
+        const result = yield dataClient.updateHabit(id, finalName, completedDatesStr, tagsStr, notesStr, finalExpectedFrequency);
         res.json({
             status: 'success',
             data: {
-                id: result.id,
-                name: getHabitName(result, sanitizedName),
-                completedDates: ((_a = result.fields) === null || _a === void 0 ? void 0 : _a.CompletedDates)
-                    ? result.fields.CompletedDates.split(',').filter(Boolean)
-                    : result.completedDates || []
+                id,
+                name: finalName,
+                completedDates: finalCompletedDates,
+                tags: finalTags,
+                notes: finalNotes,
+                expectedFrequency: finalExpectedFrequency
             }
         });
     }
@@ -185,3 +298,122 @@ const deleteHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.deleteHabit = deleteHabit;
+const markHabitCompleted = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('DEBUG: markHabitCompleted endpoint hit', req.method, req.originalUrl, req.body);
+    try {
+        const { id } = req.params;
+        const { date } = req.body;
+        (0, validation_1.validateHabitId)(id);
+        const completedDate = date || new Date().toISOString().slice(0, 10);
+        const habit = (yield dataClient.getHabits()).find((h) => h.id === id);
+        if (!habit)
+            return res.status(404).json({ status: 'error', message: 'Habit not found' });
+        const completedDates = getExistingValue('completedDates', habit);
+        if (!completedDates.includes(completedDate))
+            completedDates.push(completedDate);
+        // Preserve all existing data
+        const existingTags = getExistingValue('tags', habit);
+        const existingNotes = getExistingValue('notes', habit);
+        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+        // Convert to strings for SharePoint
+        const completedDatesString = completedDates.join(',');
+        const tagsString = existingTags.join(',');
+        const notesString = JSON.stringify(existingNotes);
+        yield dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency);
+        res.json({
+            status: 'success',
+            data: {
+                id,
+                name: getHabitName(habit),
+                completedDates,
+                tags: existingTags,
+                notes: existingNotes,
+                expectedFrequency: existingFrequency
+            }
+        });
+    }
+    catch (error) {
+        handleError(error, res);
+    }
+});
+exports.markHabitCompleted = markHabitCompleted;
+const addHabitNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('DEBUG: addHabitNote endpoint hit', req.method, req.originalUrl, req.body);
+    try {
+        const { id } = req.params;
+        const { note, text, date } = req.body;
+        (0, validation_1.validateHabitId)(id);
+        const noteText = note || text;
+        if (!noteText)
+            return res.status(400).json({ status: 'error', message: 'Note text required' });
+        const habits = yield dataClient.getHabits();
+        const habit = habits.find((h) => h.id === id);
+        if (!habit)
+            return res.status(404).json({ status: 'error', message: 'Habit not found' });
+        // Get all existing data
+        const existingNotes = getExistingValue('notes', habit);
+        const existingCompletedDates = getExistingValue('completedDates', habit);
+        const existingTags = getExistingValue('tags', habit);
+        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+        // Add new note
+        existingNotes.push({ date: date || new Date().toISOString().slice(0, 10), text: noteText });
+        // Convert arrays to strings for SharePoint
+        const completedDatesString = existingCompletedDates.join(',');
+        const tagsString = existingTags.join(',');
+        const notesString = JSON.stringify(existingNotes);
+        yield dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency);
+        res.json({
+            status: 'success',
+            data: {
+                id,
+                name: getHabitName(habit),
+                completedDates: existingCompletedDates,
+                tags: existingTags,
+                notes: existingNotes,
+                expectedFrequency: existingFrequency
+            }
+        });
+    }
+    catch (error) {
+        handleError(error, res);
+    }
+});
+exports.addHabitNote = addHabitNote;
+const getHabitsByTag = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { tag } = req.query;
+        const habits = yield dataClient.getHabits();
+        const filtered = tag ? habits.filter((h) => h.tags && h.tags.includes(tag)) : habits;
+        res.json({ status: 'success', data: filtered });
+    }
+    catch (error) {
+        handleError(error, res);
+    }
+});
+exports.getHabitsByTag = getHabitsByTag;
+const Habit_1 = __importDefault(require("../models/Habit"));
+const getHabitMetrics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        (0, validation_1.validateHabitId)(id);
+        const habits = yield dataClient.getHabits();
+        const habit = habits.find((h) => h.id === id);
+        if (!habit)
+            throw new validation_1.NotFoundError('Habit not found');
+        // Convert to Habit model for metrics
+        const habitModel = new Habit_1.default(habit.id, habit.name, habit.frequency || 1, habit.tags || [], habit.startDate, habit.expectedFrequency);
+        habitModel.completions = habit.completedDates || [];
+        const metrics = {
+            currentStreak: habitModel.getCurrentStreak(),
+            totalCompletions: habitModel.getTotalCompletions(),
+            completionRate: habitModel.getCompletionRate(),
+            startDate: habitModel.startDate,
+            expectedFrequency: habitModel.expectedFrequency
+        };
+        res.json({ status: 'success', data: metrics });
+    }
+    catch (error) {
+        handleError(error, res);
+    }
+});
+exports.getHabitMetrics = getHabitMetrics;

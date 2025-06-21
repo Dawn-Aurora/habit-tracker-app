@@ -8,6 +8,7 @@ dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const habitRoutes_1 = __importDefault(require("./routes/habitRoutes"));
+const swagger_1 = require("./swagger");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 app.use((0, cors_1.default)({
@@ -17,6 +18,12 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 app.use(express_1.default.json());
+// Add request logger middleware to log all incoming requests
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    console.log('Request body:', req.body);
+    next();
+});
 app.get('/', (req, res) => {
     res.json({
         message: 'Habit Tracker API is working',
@@ -25,8 +32,10 @@ app.get('/', (req, res) => {
             '/habits': 'GET - List all habits, POST - Create a new habit',
             '/habits/:id': 'GET - Get habit by ID, PUT - Update a habit, DELETE - Delete a habit'
         },
-        documentation: 'For a better interface, open test-api.html in the project folder'
+        documentation: 'Visit /api-docs for interactive API documentation'
     });
 });
+// API Documentation
+app.use('/api-docs', swagger_1.swaggerUi.serve, swagger_1.swaggerUi.setup(swagger_1.specs));
 app.use('/habits', habitRoutes_1.default);
 exports.default = app;

@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-console.log('REAL API MODULE LOADED');
-
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 // Configure axios with the most permissive settings for development

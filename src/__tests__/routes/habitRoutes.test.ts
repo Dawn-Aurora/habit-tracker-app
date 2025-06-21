@@ -1,10 +1,44 @@
 import request from 'supertest';
 import express from 'express';
 import habitRouter from '../../routes/habitRoutes';
+import { habits as mockHabits } from '../../mockDataClient';
 
 const app = express();
 app.use(express.json());
 app.use('/habits', habitRouter);
+
+beforeEach(() => {
+  mockHabits.length = 0;
+  mockHabits.push(
+    {
+      id: '1',
+      name: 'Morning Exercise',
+      completedDates: ['2025-06-15', '2025-06-16'],
+      tags: ['health'],
+      notes: [],
+      startDate: '2025-06-01',
+      expectedFrequency: 7
+    },
+    {
+      id: '2',
+      name: 'Reading',
+      completedDates: ['2025-06-16'],
+      tags: ['creativity'],
+      notes: [],
+      startDate: '2025-06-10',
+      expectedFrequency: 5
+    },
+    {
+      id: '3',
+      name: 'Meditation',
+      completedDates: [],
+      tags: ['relaxation'],
+      notes: [],
+      startDate: '2025-06-15',
+      expectedFrequency: 3
+    }
+  );
+});
 
 describe('Habit API Integration', () => {
   describe('GET /habits', () => {
@@ -53,6 +87,7 @@ describe('Habit API Integration', () => {
       const res = await request(app)
         .put(`/habits/${habitId}`)
         .send({ name: 'Updated Habit Name', completedDates: ['2025-06-18'] });
+      console.log('DEBUG completedDates:', res.body.data.completedDates);
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('status', 'success');
       expect(res.body.data).toHaveProperty('id', habitId);

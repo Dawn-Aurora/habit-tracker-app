@@ -42,6 +42,9 @@ if ($habitId) {
     $updateHabit = @{
         name = "Exercise daily - Updated"
         completedDates = @("2025-06-17T10:00:00Z")
+        tags = @() # Always send tags, even if empty
+        notes = @() # Always send notes, even if empty
+        expectedFrequency = "" # Always send expectedFrequency, even if empty
     } | ConvertTo-Json
 
     try {

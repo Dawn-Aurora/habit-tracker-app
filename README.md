@@ -1,5 +1,33 @@
 # Habit Tracker App
 
+## 🚀 Quick Start
+
+### ⚠️ IMPORTANT: Windows PowerShell Users
+**PowerShell does NOT support `&&` operator!** Use separate commands or see `START-GUIDE.md` for detailed instructions.
+
+### Start the Application (2 Steps):
+
+#### 1. Start Backend (Terminal 1):
+```powershell
+.\start-server.ps1
+```
+
+#### 2. Start Frontend (NEW Terminal 2):
+```powershell
+.\start-frontend.ps1
+```
+**OR**
+```powershell
+cd habit-tracker-frontend
+npm start
+```
+
+#### Access URLs:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
+
+📖 **For detailed startup instructions, see `START-GUIDE.md`**
+
 ## Overview
 The Habit Tracker App is a web application designed to help users track their habits effectively. Users can add, remove, and manage their habits, making it easier to stay on top of their goals.
 
@@ -21,7 +49,8 @@ The Habit Tracker App is a web application designed to help users track their ha
 ```
 habit-tracker-app
 ├── src
-│   ├── app.ts                # Entry point of the application
+│   ├── app.ts                # Express app configuration and middleware
+│   ├── server.ts             # Main entry point - starts the HTTP server
 │   ├── components
 │   │   └── HabitList.ts      # Manages the display and interaction of habits
 │   ├── models
@@ -112,18 +141,24 @@ Once the application is running, you can access the API via your browser or API 
 
 ## Local Development Scripts
 
-- **start-server.ps1**: PowerShell script to automate local development. It:
+- **start-server.ps1**: PowerShell script to automate backend development. It:
   - Kills any process using port 5000 (to avoid port conflicts)
+  - Starts the backend server using `npm start` (now correctly runs `src/server.ts`)
   - Opens the API test page in your browser
-  - Starts the backend server
   - Provides user-friendly output and instructions
+
+- **start-frontend.ps1**: PowerShell script to start the frontend development server. It:
+  - Navigates to the frontend directory
+  - Starts the React development server
+  - Opens the app in your browser
+  - Clean output without PowerShell warnings
 
 - **test-endpoints.ps1**: PowerShell script to automatically test all backend API endpoints (GET, POST, PUT, DELETE for /habits). It:
   - Sends requests to your local backend server
   - Checks for correct responses and validation errors
   - Verifies basic CRUD functionality
 
-These scripts are recommended for starting, testing, and verifying the backend locally on Windows.
+These scripts are optimized for Windows PowerShell and provide reliable startup for both backend and frontend servers.
 
 ## Contribution Guidelines
 Contributions are welcome! Please follow these steps:

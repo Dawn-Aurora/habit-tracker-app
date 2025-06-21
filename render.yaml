@@ -3,7 +3,7 @@ services:
     name: habit-tracker-api
     env: node
     buildCommand: npm ci --include=dev && npm run build
-    startCommand: node dist/app.js
+    startCommand: node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production

@@ -35,12 +35,15 @@ export async function getHabits() {
   }
 }
 
-export async function createHabit(name: string, completedDate?: string) {
+export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
   const item = {
     fields: {
-      Title: name,
-      Name: name,
-      ...(completedDate && { CompletedDates: completedDate })
+      Title: name || "",
+      Name: name || "",
+      CompletedDates: completedDate || "",
+      ExpectedFrequency: expectedFrequency || "",
+      Tags: tagsStr && tagsStr.length ? tagsStr : "",
+      Notes: notesStr && notesStr.length ? notesStr : "[]"
     }
   };
   const result = await graphClient
@@ -49,58 +52,28 @@ export async function createHabit(name: string, completedDate?: string) {
   return result;
 }
 
-export async function updateHabit(itemId: string, name?: string, completedDate?: string) {
+export async function updateHabit(itemId: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
   try {
     if (!itemId) {
       throw new Error('Item ID is required for updating a habit');
     }
-    try {
-      const listDefinition = await graphClient
-        .api(`/sites/${siteId}/lists/${listId}/columns`)
-        .get();
-      const existingItem = await graphClient
-        .api(`/sites/${siteId}/lists/${listId}/items/${itemId}?expand=fields`)
-        .get();
-      const fields: any = {};
-      if (name) {
-        fields.Title = name;
-        if (existingItem.fields.hasOwnProperty('Name')) {
-          fields.Name = name;
-        }
-      }
-      if (completedDate !== undefined) {
-        if (existingItem.fields.hasOwnProperty('CompletedDates')) {
-          fields.CompletedDates = completedDate;
-        }
-      }
-      if (Object.keys(fields).length === 0) {
-        return existingItem;
-      }
-      const item = { fields };
-      const result = await graphClient
-        .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
-        .patch(item);
-      return result;
-    } catch (error: any) {
-      console.error(`Error with item ID ${itemId}:`, error);
-      if (error.statusCode === 404) {
-        throw new Error(`Item with ID ${itemId} not found`);
-      }
-      try {
-        const simpleItem = {
-          fields: {
-            Title: name || 'Updated Habit'
-          }
-        };
-        const result = await graphClient
-          .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
-          .patch(simpleItem);
-        return result;
-      } catch (altError: any) {
-        console.error('Alternative update also failed:', altError);
-        throw altError;
-      }
-    }
+    const existingItem = await graphClient
+      .api(`/sites/${siteId}/lists/${listId}/items/${itemId}?expand=fields`)
+      .get();
+    const fields: any = {};
+    fields.Title = name !== undefined ? name : (existingItem.fields.Title || "");
+    fields.Name = name !== undefined ? name : (existingItem.fields.Name || "");
+    fields.CompletedDates = completedDatesStr !== undefined ? completedDatesStr : (existingItem.fields.CompletedDates || "");
+    fields.ExpectedFrequency = expectedFrequency !== undefined ? expectedFrequency : (existingItem.fields.ExpectedFrequency || "");
+    fields.Tags = tagsStr !== undefined ? tagsStr : (existingItem.fields.Tags || "");
+    fields.Notes = notesStr !== undefined ? notesStr : (existingItem.fields.Notes || "[]");
+    const item = { fields };
+    // Debug: Log what is being sent to SharePoint
+    console.log('Updating SharePoint item:', JSON.stringify({ itemId, fields }, null, 2));
+    const result = await graphClient
+      .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
+      .patch(item);
+    return result;
   } catch (error: any) {
     console.error(`Error updating habit with ID ${itemId}:`, error);
     throw new Error(`Failed to update habit: ${error.message}`);

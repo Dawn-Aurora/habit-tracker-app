@@ -1,38 +1,69 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import HabitList from './HabitList';
 
 describe('HabitList Component', () => {
+  const mockHabits = [
+    { 
+      id: '1', 
+      name: 'Exercise', 
+      completedDates: ['2023-06-15', '2023-06-16'], 
+      expectedFrequency: 'Daily',
+      tags: ['health', 'fitness'],
+      notes: [{ date: '2023-06-15', text: 'Good workout today!' }]
+    },
+    { 
+      id: '2', 
+      name: 'Reading', 
+      completedDates: ['2023-06-17'], 
+      expectedFrequency: 'Daily',
+      tags: ['learning'],
+      notes: []
+    }
+  ];
+
+  const mockProps = {
+    habits: mockHabits,
+    onEdit: jest.fn(),
+    onDelete: jest.fn(),
+    onMarkComplete: jest.fn(),
+    onAddNote: jest.fn(),
+    onViewMetrics: jest.fn()
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('renders without crashing (empty list)', () => {
-    render(<HabitList habits={[]} onEdit={jest.fn()} onDelete={jest.fn()} />);
-    expect(screen.getByText(/no habits/i)).toBeInTheDocument();
+    render(<HabitList {...mockProps} habits={[]} />);
+    expect(screen.getByText(/no habits found/i)).toBeInTheDocument();
   });
 
   it('renders a list of habits', () => {
-    const habits = [
-      { id: '1', name: 'Exercise', completedDates: [] },
-      { id: '2', name: 'Read', completedDates: [] },
-    ];
-    render(<HabitList habits={habits} onEdit={jest.fn()} onDelete={jest.fn()} />);
+    render(<HabitList {...mockProps} />);
     expect(screen.getByText('Exercise')).toBeInTheDocument();
-    expect(screen.getByText('Read')).toBeInTheDocument();
+    expect(screen.getByText('Reading')).toBeInTheDocument();
   });
 
   it('calls onEdit when edit button is clicked', () => {
-    const habits = [{ id: '1', name: 'Exercise', completedDates: [] }];
-    const onEdit = jest.fn();
-    render(<HabitList habits={habits} onEdit={onEdit} onDelete={jest.fn()} />);
-    screen.getByText('Edit').click();
-    expect(onEdit).toHaveBeenCalledWith(habits[0]);
+    render(<HabitList {...mockProps} />);
+    const editButtons = screen.getAllByText('Edit');
+    fireEvent.click(editButtons[0]);
+    expect(mockProps.onEdit).toHaveBeenCalledWith(mockHabits[0]);
   });
 
   it('calls onDelete when delete button is clicked', () => {
-    const habits = [{ id: '1', name: 'Exercise', completedDates: [] }];
-    const onDelete = jest.fn();
-    render(<HabitList habits={habits} onEdit={jest.fn()} onDelete={onDelete} />);
-    screen.getByText('Delete').click();
-    expect(onDelete).toHaveBeenCalledWith('1');
+    render(<HabitList {...mockProps} />);
+    const deleteButtons = screen.getAllByText('Delete');
+    fireEvent.click(deleteButtons[0]);
+    expect(mockProps.onDelete).toHaveBeenCalledWith('1');
   });
 
-  // Add more edge case and error handling tests as needed
+  it('calls onMarkComplete when mark complete button is clicked', () => {
+    render(<HabitList {...mockProps} />);
+    const markCompleteButtons = screen.getAllByText('Mark Complete');
+    fireEvent.click(markCompleteButtons[0]);
+    expect(mockProps.onMarkComplete).toHaveBeenCalledWith('1');
+  });
 });

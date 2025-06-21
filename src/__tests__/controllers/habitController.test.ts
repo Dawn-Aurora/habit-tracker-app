@@ -1,9 +1,11 @@
 process.env.DATA_CLIENT = 'mock';
 jest.mock('../../mockDataClient');
+jest.mock('../../sharepointClient');
 
 import { Request, Response } from 'express';
 import * as habitController from '../../controllers/habitController';
 import * as mockDataClient from '../../mockDataClient';
+import * as sharepointClient from '../../sharepointClient';
 
 describe('Habit Controller', () => {
   let mockRequest: Partial<Request>;
@@ -30,6 +32,7 @@ describe('Habit Controller', () => {
         { id: '1', Name: 'Exercise', Title: 'Exercise', CompletedDates: '2025-06-15,2025-06-16' },
         { id: '2', Name: 'Reading', Title: 'Reading', CompletedDates: '2025-06-17' }
       ];
+      (sharepointClient.getHabits as jest.Mock).mockRejectedValue(new Error('fail'));
       (mockDataClient.getHabits as jest.Mock).mockResolvedValue(mockHabits);
       await habitController.getHabits(mockRequest as Request, mockResponse as Response);
       expect(mockDataClient.getHabits).toHaveBeenCalled();
@@ -43,6 +46,7 @@ describe('Habit Controller', () => {
     });
 
     it('should handle errors properly', async () => {
+      (sharepointClient.getHabits as jest.Mock).mockRejectedValue(new Error('fail'));
       (mockDataClient.getHabits as jest.Mock).mockRejectedValue(new Error('Database error'));
       await habitController.getHabits(mockRequest as Request, mockResponse as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(500);
@@ -63,10 +67,10 @@ describe('Habit Controller', () => {
           Title: 'New Habit',
           CompletedDates: ''
         }
-      };
+      };      (sharepointClient.createHabit as jest.Mock).mockRejectedValue(new Error('fail'));
       (mockDataClient.createHabit as jest.Mock).mockResolvedValue(mockCreatedHabit);
       await habitController.createHabit(mockRequest as Request, mockResponse as Response);
-      expect(mockDataClient.createHabit).toHaveBeenCalledWith('New Habit');
+      expect(mockDataClient.createHabit).toHaveBeenCalledWith('New Habit', undefined, "", "", "[]", undefined);
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalled();
       expect(responseObject).toHaveProperty('status', 'success');
