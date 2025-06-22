@@ -9,7 +9,8 @@ class Habit {
         this.completed = false;
         this.tags = tags;
         this.notes = [];
-        this.startDate = startDate || new Date().toISOString().slice(0, 10);
+        // Set start date - if empty or invalid, will be handled in getCompletionRate
+        this.startDate = startDate || '';
         this.expectedFrequency = expectedFrequency || frequency;
         this.completions = [];
     }
@@ -44,7 +45,25 @@ class Habit {
         return streak;
     }
     getCompletionRate() {
-        const daysSinceStart = Math.max(1, Math.ceil((new Date().getTime() - new Date(this.startDate).getTime()) / (1000 * 60 * 60 * 24)));
+        // Handle empty or invalid start dates
+        let startDate = this.startDate;
+        if (!startDate || startDate === '') {
+            // If no start date, use the earliest completion date or today
+            if (this.completions.length > 0) {
+                const completionDates = this.completions.map(d => new Date(d)).sort((a, b) => a.getTime() - b.getTime());
+                startDate = completionDates[0].toISOString().slice(0, 10);
+            }
+            else {
+                startDate = new Date().toISOString().slice(0, 10);
+            }
+        }
+        const startDateObj = new Date(startDate);
+        const currentDate = new Date();
+        // Ensure start date is valid
+        if (isNaN(startDateObj.getTime())) {
+            return 0;
+        }
+        const daysSinceStart = Math.max(1, Math.ceil((currentDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
         // Return as decimal (0.0 to 1.0) so frontend can display as percentage
         return this.getTotalCompletions() / daysSinceStart;
     }
