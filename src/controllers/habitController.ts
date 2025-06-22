@@ -1,33 +1,60 @@
 import { Request, Response } from 'express';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 dotenv.config();
 import * as mockDataClient from '../mockDataClient';
 import * as sharepointClient from '../sharepointClient';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 // Enhanced fallback logic: try SharePoint, fallback to mock on error
 const useMock = process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DATA === 'true';
+
+// Helper function to filter habits by user
+const filterHabitsByUser = (habits: any[], userId?: string) => {
+  if (!userId) {
+    // For backward compatibility, return all habits if no user ID
+    return habits;
+  }
+  return habits.filter(habit => habit.userId === userId || !habit.userId); // Include habits without userId for backward compatibility
+};
+
 const dataClient = useMock
-    ? mockDataClient
+    ? {
+        async getHabits(userId?: string) {
+            const allHabits = await mockDataClient.getHabits();
+            return filterHabitsByUser(allHabits, userId);
+        },
+        async createHabit(name: string, completedDate?: string, completedDatesStr?: string, expectedFrequency?: string, userId?: string) {
+            return await mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
+        },
+        async updateHabit(id: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+            return await mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
+        },
+        async deleteHabit(id: string, userId?: string) {
+            return await mockDataClient.deleteHabit(id, userId);
+        }
+    }
     : {
-        async getHabits() {
+        async getHabits(userId?: string) {
             try {
-                return await sharepointClient.getHabits();
+                const allHabits = await sharepointClient.getHabits();
+                return filterHabitsByUser(allHabits, userId);
             } catch (e) {
-                return await mockDataClient.getHabits();
+                const allHabits = await mockDataClient.getHabits();
+                return filterHabitsByUser(allHabits, userId);
             }
         },
-        async createHabit(name: string, completedDate?: string, completedDatesStr?: string, expectedFrequency?: string) {
+        async createHabit(name: string, completedDate?: string, completedDatesStr?: string, expectedFrequency?: string, userId?: string) {
             try {
                 return await sharepointClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
             } catch (e) {
-                return await mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
+                return await mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
             }
         },
-        async updateHabit(id: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
+        async updateHabit(id: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
             try {
                 return await sharepointClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
             } catch (e) {
-                return await mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
+                return await mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
             }
         },
         async deleteHabit(id: string) {
@@ -141,7 +168,8 @@ function getHabitName(habit: any, fallbackName?: string): string {
 
 export const getHabits = async (req: Request, res: Response) => {
     try {
-        const habits = await dataClient.getHabits();
+        const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
+        const habits = await dataClient.getHabits(userId);
         const transformedHabits = habits.map((habit: any) => {
             return {
                 id: habit.id,
@@ -150,7 +178,8 @@ export const getHabits = async (req: Request, res: Response) => {
                 tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
                 notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
                 startDate: habit.StartDate || habit.startDate || '',
-                expectedFrequency: habit.ExpectedFrequency || habit.expectedFrequency || ''
+                expectedFrequency: habit.ExpectedFrequency || habit.expectedFrequency || '',
+                userId: habit.userId
             };
         });
         
@@ -159,7 +188,8 @@ export const getHabits = async (req: Request, res: Response) => {
             validateHabitName(habit.name);
             if (habit.completedDates.length > 0) {
                 validateCompletedDates(habit.completedDates);
-            }        });
+            }
+        });
         res.json({
             status: 'success',
             data: transformedHabits
@@ -174,15 +204,17 @@ export const createHabit = async (req: Request, res: Response) => {
         const { name, frequency } = req.body;
         validateHabitName(name);
         const sanitizedName = sanitizeHabitName(name);
+        const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
         // Pass frequency to dataClient as expectedFrequency
-        const result = await dataClient.createHabit(sanitizedName, undefined, "", "", "[]", frequency);
+        const result = await dataClient.createHabit(sanitizedName, undefined, "", frequency, userId);
         const newHabit = {
             id: result.id,
             name: getHabitName(result, sanitizedName),
             completedDates: (result.fields && result.fields.CompletedDates)
                 ? result.fields.CompletedDates.split(',').filter(Boolean)
                 : result.completedDates || [],
-            expectedFrequency: result.expectedFrequency || frequency || ''
+            expectedFrequency: result.expectedFrequency || frequency || '',
+            userId: result.userId || userId
         };
         validateHabitId(newHabit.id);
         validateHabitName(newHabit.name);
@@ -259,11 +291,11 @@ export const updateHabit = async (req: Request, res: Response) => {
     }
 };
 
-export const deleteHabit = async (req: Request, res: Response) => {
-    try {
+export const deleteHabit = async (req: Request, res: Response) => {    try {
         const { id } = req.params;
         validateHabitId(id);
-        await dataClient.deleteHabit(id);
+        const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
+        await dataClient.deleteHabit(id, userId);
         res.status(200).json({ status: 'success', data: { id } });
     } catch (error: any) {
         handleError(error, res);
@@ -275,9 +307,11 @@ export const markHabitCompleted = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { date } = req.body;
+        const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
         validateHabitId(id);
         const completedDate = date || new Date().toISOString().slice(0, 10);
-        const habit = (await dataClient.getHabits()).find((h: any) => h.id === id);
+        const habits = await dataClient.getHabits(userId);
+        const habit = habits.find((h: any) => h.id === id);
         if (!habit) return res.status(404).json({ status: 'error', message: 'Habit not found' });
         
         const completedDates = getExistingValue('completedDates', habit);
@@ -293,7 +327,7 @@ export const markHabitCompleted = async (req: Request, res: Response) => {
         const tagsString = existingTags.join(',');
         const notesString = JSON.stringify(existingNotes);
         
-        await dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency);
+        await dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency, userId);
         
         res.json({ 
             status: 'success', 
@@ -370,8 +404,9 @@ import HabitModel from '../models/Habit';
 export const getHabitMetrics = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
         validateHabitId(id);
-        const habits = await dataClient.getHabits();
+        const habits = await dataClient.getHabits(userId);
         const habit = habits.find((h: any) => h.id === id);
         if (!habit) throw new NotFoundError('Habit not found');
         // Convert to Habit model for metrics

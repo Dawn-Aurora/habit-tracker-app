@@ -38,13 +38,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const habitController = __importStar(require("../controllers/habitController"));
+const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 /**
  * @swagger
  * /habits:
  *   get:
- *     summary: Get all habits
+ *     summary: Get all habits for the authenticated user
  *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: tag
@@ -53,7 +56,7 @@ const router = express_1.default.Router();
  *         description: Filter habits by tag
  *     responses:
  *       200:
- *         description: List of habits retrieved successfully
+ *         description: List of user habits retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -63,6 +66,8 @@ const router = express_1.default.Router();
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Habit'
+ *       401:
+ *         description: Unauthorized - Authentication required
  *       500:
  *         description: Server error
  *         content:
@@ -70,7 +75,7 @@ const router = express_1.default.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', habitController.getHabits);
+router.get('/', auth_1.optionalAuth, habitController.getHabits);
 /**
  * @swagger
  * /habits:
@@ -101,12 +106,11 @@ router.get('/', habitController.getHabits);
  *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error
- *         content:
- *           application/json:
+ *         content: *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', habitController.createHabit);
+router.post('/', auth_1.authenticateToken, habitController.createHabit);
 /**
  * @swagger
  * /habits/{id}:
@@ -155,7 +159,7 @@ router.post('/', habitController.createHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', habitController.updateHabit);
+router.put('/:id', auth_1.authenticateToken, habitController.updateHabit);
 /**
  * @swagger
  * /habits/{id}:
@@ -193,7 +197,7 @@ router.put('/:id', habitController.updateHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', habitController.deleteHabit);
+router.delete('/:id', auth_1.authenticateToken, habitController.deleteHabit);
 /**
  * @swagger
  * /habits/{id}/complete:
@@ -250,7 +254,7 @@ router.delete('/:id', habitController.deleteHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/complete', habitController.markHabitCompleted);
+router.post('/:id/complete', auth_1.optionalAuth, habitController.markHabitCompleted);
 /**
  * @swagger
  * /habits/{id}/note:
@@ -299,7 +303,7 @@ router.post('/:id/complete', habitController.markHabitCompleted);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/note', habitController.addHabitNote);
+router.post('/:id/note', auth_1.authenticateToken, habitController.addHabitNote);
 /**
  * @swagger
  * /habits/by-tag:
@@ -339,7 +343,7 @@ router.post('/:id/note', habitController.addHabitNote);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/by-tag', habitController.getHabitsByTag);
+router.get('/by-tag', auth_1.optionalAuth, habitController.getHabitsByTag);
 /**
  * @swagger
  * /habits/{id}/metrics:
@@ -376,5 +380,5 @@ router.get('/by-tag', habitController.getHabitsByTag);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id/metrics', habitController.getHabitMetrics);
+router.get('/:id/metrics', auth_1.optionalAuth, habitController.getHabitMetrics);
 exports.default = router;

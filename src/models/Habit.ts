@@ -1,5 +1,6 @@
 class Habit {
     id: string;
+    userId: string; // Associate habit with user
     name: string;
     frequency: number;
     completed: boolean;
@@ -9,8 +10,9 @@ class Habit {
     expectedFrequency: number | string;
     completions: string[]; // ISO date strings
 
-    constructor(id: string, name: string, frequency: number, tags: string[] = [], startDate?: string, expectedFrequency?: number | string) {
+    constructor(id: string, name: string, frequency: number, tags: string[] = [], startDate?: string, expectedFrequency?: number | string, userId?: string) {
         this.id = id;
+        this.userId = userId || ''; // Default to empty string for backward compatibility
         this.name = name;
         this.frequency = frequency;
         this.completed = false;
@@ -57,7 +59,8 @@ class Habit {
 
     getCompletionRate(): number {
         const daysSinceStart = Math.max(1, Math.ceil((new Date().getTime() - new Date(this.startDate).getTime()) / (1000 * 60 * 60 * 24)));
-        return Math.round((this.getTotalCompletions() / daysSinceStart) * 100);
+        // Return as decimal (0.0 to 1.0) so frontend can display as percentage
+        return this.getTotalCompletions() / daysSinceStart;
     }
 }
 

@@ -46,42 +46,74 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHabitMetrics = exports.getHabitsByTag = exports.addHabitNote = exports.markHabitCompleted = exports.deleteHabit = exports.updateHabit = exports.createHabit = exports.getHabits = void 0;
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+const dotenv = __importStar(require("dotenv"));
+dotenv.config();
 const mockDataClient = __importStar(require("../mockDataClient"));
 const sharepointClient = __importStar(require("../sharepointClient"));
 // Enhanced fallback logic: try SharePoint, fallback to mock on error
 const useMock = process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DATA === 'true';
+// Helper function to filter habits by user
+const filterHabitsByUser = (habits, userId) => {
+    if (!userId) {
+        // For backward compatibility, return all habits if no user ID
+        return habits;
+    }
+    return habits.filter(habit => habit.userId === userId || !habit.userId); // Include habits without userId for backward compatibility
+};
 const dataClient = useMock
-    ? mockDataClient
+    ? {
+        getHabits(userId) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const allHabits = yield mockDataClient.getHabits();
+                return filterHabitsByUser(allHabits, userId);
+            });
+        },
+        createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId) {
+            return __awaiter(this, void 0, void 0, function* () {
+                return yield mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
+            });
+        },
+        updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId) {
+            return __awaiter(this, void 0, void 0, function* () {
+                return yield mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
+            });
+        },
+        deleteHabit(id, userId) {
+            return __awaiter(this, void 0, void 0, function* () {
+                return yield mockDataClient.deleteHabit(id, userId);
+            });
+        }
+    }
     : {
-        getHabits() {
+        getHabits(userId) {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
-                    return yield sharepointClient.getHabits();
+                    const allHabits = yield sharepointClient.getHabits();
+                    return filterHabitsByUser(allHabits, userId);
                 }
                 catch (e) {
-                    return yield mockDataClient.getHabits();
+                    const allHabits = yield mockDataClient.getHabits();
+                    return filterHabitsByUser(allHabits, userId);
                 }
             });
         },
-        createHabit(name, completedDate, completedDatesStr, expectedFrequency) {
+        createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
                     return yield sharepointClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
                 }
                 catch (e) {
-                    return yield mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
+                    return yield mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
                 }
             });
         },
-        updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency) {
+        updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
                     return yield sharepointClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
                 }
                 catch (e) {
-                    return yield mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
+                    return yield mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
                 }
             });
         },
@@ -172,8 +204,10 @@ function getHabitName(habit, fallbackName) {
     return habit.Name || habit.Title || habit.name || fallbackName || '';
 }
 const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const habits = yield dataClient.getHabits();
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
+        const habits = yield dataClient.getHabits(userId);
         const transformedHabits = habits.map((habit) => {
             return {
                 id: habit.id,
@@ -182,7 +216,8 @@ const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
                 notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
                 startDate: habit.StartDate || habit.startDate || '',
-                expectedFrequency: habit.ExpectedFrequency || habit.expectedFrequency || ''
+                expectedFrequency: habit.ExpectedFrequency || habit.expectedFrequency || '',
+                userId: habit.userId
             };
         });
         transformedHabits.forEach((habit) => {
@@ -203,19 +238,22 @@ const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.getHabits = getHabits;
 const createHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { name, frequency } = req.body;
         (0, validation_1.validateHabitName)(name);
         const sanitizedName = (0, validation_1.sanitizeHabitName)(name);
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
         // Pass frequency to dataClient as expectedFrequency
-        const result = yield dataClient.createHabit(sanitizedName, undefined, "", "", "[]", frequency);
+        const result = yield dataClient.createHabit(sanitizedName, undefined, "", frequency, userId);
         const newHabit = {
             id: result.id,
             name: getHabitName(result, sanitizedName),
             completedDates: (result.fields && result.fields.CompletedDates)
                 ? result.fields.CompletedDates.split(',').filter(Boolean)
                 : result.completedDates || [],
-            expectedFrequency: result.expectedFrequency || frequency || ''
+            expectedFrequency: result.expectedFrequency || frequency || '',
+            userId: result.userId || userId
         };
         (0, validation_1.validateHabitId)(newHabit.id);
         (0, validation_1.validateHabitName)(newHabit.name);
@@ -283,10 +321,12 @@ const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.updateHabit = updateHabit;
 const deleteHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { id } = req.params;
         (0, validation_1.validateHabitId)(id);
-        yield dataClient.deleteHabit(id);
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
+        yield dataClient.deleteHabit(id, userId);
         res.status(200).json({ status: 'success', data: { id } });
     }
     catch (error) {
@@ -295,13 +335,16 @@ const deleteHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.deleteHabit = deleteHabit;
 const markHabitCompleted = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     console.log('DEBUG: markHabitCompleted endpoint hit', req.method, req.originalUrl, req.body);
     try {
         const { id } = req.params;
         const { date } = req.body;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
         (0, validation_1.validateHabitId)(id);
         const completedDate = date || new Date().toISOString().slice(0, 10);
-        const habit = (yield dataClient.getHabits()).find((h) => h.id === id);
+        const habits = yield dataClient.getHabits(userId);
+        const habit = habits.find((h) => h.id === id);
         if (!habit)
             return res.status(404).json({ status: 'error', message: 'Habit not found' });
         const completedDates = getExistingValue('completedDates', habit);
@@ -315,7 +358,7 @@ const markHabitCompleted = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const completedDatesString = completedDates.join(',');
         const tagsString = existingTags.join(',');
         const notesString = JSON.stringify(existingNotes);
-        yield dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency);
+        yield dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency, userId);
         res.json({
             status: 'success',
             data: {
@@ -389,10 +432,12 @@ const getHabitsByTag = (req, res) => __awaiter(void 0, void 0, void 0, function*
 exports.getHabitsByTag = getHabitsByTag;
 const Habit_1 = __importDefault(require("../models/Habit"));
 const getHabitMetrics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { id } = req.params;
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
         (0, validation_1.validateHabitId)(id);
-        const habits = yield dataClient.getHabits();
+        const habits = yield dataClient.getHabits(userId);
         const habit = habits.find((h) => h.id === id);
         if (!habit)
             throw new validation_1.NotFoundError('Habit not found');

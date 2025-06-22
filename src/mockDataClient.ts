@@ -8,7 +8,8 @@ let habits: any[] = [
     completedDates: ['2025-06-15', '2025-06-16'],
     tags: ['health'],
     notes: [],
-    expectedFrequency: '7 times/week' // changed to string
+    expectedFrequency: '7 times/week',
+    userId: '' // Default for backward compatibility
   },
   {
     id: '2',
@@ -16,7 +17,8 @@ let habits: any[] = [
     completedDates: ['2025-06-16'],
     tags: ['creativity'],
     notes: [],
-    expectedFrequency: '5 times/week' // changed to string
+    expectedFrequency: '5 times/week',
+    userId: '' // Default for backward compatibility
   },
   {
     id: '3',
@@ -24,7 +26,8 @@ let habits: any[] = [
     completedDates: [],
     tags: ['relaxation'],
     notes: [],
-    expectedFrequency: '3 times/week' // changed to string
+    expectedFrequency: '3 times/week',
+    userId: '' // Default for backward compatibility
   }
 ];
 
@@ -35,11 +38,12 @@ export async function getHabits() {
     Name: h.name,
     Title: h.name,
     CompletedDates: h.completedDates.join(','),
-    expectedFrequency: h.expectedFrequency || ''
+    expectedFrequency: h.expectedFrequency || '',
+    userId: h.userId || ''
   }));
 }
 
-export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
+export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, expectedFrequency?: string, userId?: string) {
   if (!name) {
     throw new Error('Habit name is required');
   }
@@ -50,15 +54,14 @@ export async function createHabit(name: string, completedDate?: string, complete
   } else if (completedDate) {
     completedDatesArr = [completedDate];
   }
-  const tagsArr = tagsStr ? tagsStr.split(',').filter(Boolean) : [];
-  const notesArr = notesStr ? JSON.parse(notesStr) : [];
   const newHabit = {
     id: uuidv4(),
     name,
     completedDates: completedDatesArr,
-    tags: tagsArr,
-    notes: notesArr,
+    tags: [],
+    notes: [],
     expectedFrequency: expectedFrequency || '',
+    userId: userId || '',
     fields: {
       Title: name,
       Name: name,
@@ -77,7 +80,7 @@ export async function createHabit(name: string, completedDate?: string, complete
   };
 }
 
-export async function updateHabit(itemId: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
+export async function updateHabit(itemId: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
   const habitIndex = habits.findIndex(h => h.id === itemId);
   if (habitIndex === -1) {
     throw new NotFoundError(`Item with ID ${itemId} not found`);
@@ -117,7 +120,7 @@ export async function updateHabit(itemId: string, name?: string, completedDatesS
 
 export { habits };
 
-export async function deleteHabit(itemId: string) {
+export async function deleteHabit(itemId: string, userId?: string) {
   const habitIndex = habits.findIndex(h => h.id === itemId);
   if (habitIndex === -1) {
     throw new NotFoundError(`Item with ID ${itemId} not found`);

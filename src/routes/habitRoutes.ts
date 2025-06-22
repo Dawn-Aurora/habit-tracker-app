@@ -1,5 +1,6 @@
 import express from 'express';
 import * as habitController from '../controllers/habitController';
+import { optionalAuth, authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -7,8 +8,10 @@ const router = express.Router();
  * @swagger
  * /habits:
  *   get:
- *     summary: Get all habits
+ *     summary: Get all habits for the authenticated user
  *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: tag
@@ -17,7 +20,7 @@ const router = express.Router();
  *         description: Filter habits by tag
  *     responses:
  *       200:
- *         description: List of habits retrieved successfully
+ *         description: List of user habits retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -27,6 +30,8 @@ const router = express.Router();
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Habit'
+ *       401:
+ *         description: Unauthorized - Authentication required
  *       500:
  *         description: Server error
  *         content:
@@ -34,7 +39,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', habitController.getHabits);
+router.get('/', optionalAuth, habitController.getHabits);
 
 /**
  * @swagger
@@ -66,12 +71,11 @@ router.get('/', habitController.getHabits);
  *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Server error
- *         content:
- *           application/json:
+ *         content: *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', habitController.createHabit);
+router.post('/', authenticateToken, habitController.createHabit);
 
 /**
  * @swagger
@@ -121,7 +125,7 @@ router.post('/', habitController.createHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', habitController.updateHabit);
+router.put('/:id', authenticateToken, habitController.updateHabit);
 
 /**
  * @swagger
@@ -160,7 +164,7 @@ router.put('/:id', habitController.updateHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/:id', habitController.deleteHabit);
+router.delete('/:id', authenticateToken, habitController.deleteHabit);
 
 /**
  * @swagger
@@ -218,7 +222,7 @@ router.delete('/:id', habitController.deleteHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/complete', habitController.markHabitCompleted);
+router.post('/:id/complete', optionalAuth, habitController.markHabitCompleted);
 
 /**
  * @swagger
@@ -268,7 +272,7 @@ router.post('/:id/complete', habitController.markHabitCompleted);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/note', habitController.addHabitNote);
+router.post('/:id/note', authenticateToken, habitController.addHabitNote);
 
 /**
  * @swagger
@@ -309,7 +313,7 @@ router.post('/:id/note', habitController.addHabitNote);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/by-tag', habitController.getHabitsByTag);
+router.get('/by-tag', optionalAuth, habitController.getHabitsByTag);
 
 /**
  * @swagger
@@ -347,6 +351,6 @@ router.get('/by-tag', habitController.getHabitsByTag);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id/metrics', habitController.getHabitMetrics);
+router.get('/:id/metrics', optionalAuth, habitController.getHabitMetrics);
 
 export default router;
