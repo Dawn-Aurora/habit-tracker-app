@@ -5,29 +5,35 @@ let habits: any[] = [
   {
     id: '1',
     name: 'Morning Exercise',
-    completedDates: ['2025-06-15', '2025-06-16'],
+    completions: ['2025-06-15', '2025-06-16'],
     tags: ['health'],
     notes: [],
     expectedFrequency: '7 times/week',
-    userId: '' // Default for backward compatibility
+    userId: '', // Default for backward compatibility
+    frequency: 7,
+    completed: false
   },
   {
     id: '2',
     name: 'Reading',
-    completedDates: ['2025-06-16'],
+    completions: ['2025-06-16'],
     tags: ['creativity'],
     notes: [],
     expectedFrequency: '5 times/week',
-    userId: '' // Default for backward compatibility
+    userId: '', // Default for backward compatibility
+    frequency: 5,
+    completed: false
   },
   {
     id: '3',
     name: 'Meditation',
-    completedDates: [],
+    completions: [],
     tags: ['relaxation'],
     notes: [],
     expectedFrequency: '3 times/week',
-    userId: '' // Default for backward compatibility
+    userId: '', // Default for backward compatibility
+    frequency: 3,
+    completed: false
   }
 ];
 
@@ -37,50 +43,54 @@ export async function getHabits() {
     id: h.id,
     Name: h.name,
     Title: h.name,
-    CompletedDates: h.completedDates.join(','),
+    CompletedDates: h.completions.join(','),
     expectedFrequency: h.expectedFrequency || '',
     userId: h.userId || ''
   }));
 }
 
-export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, expectedFrequency?: string, userId?: string) {
+export async function createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
   if (!name) {
     throw new Error('Habit name is required');
   }
-  // Support both completedDate (single) and completedDatesStr (comma-separated)
-  let completedDatesArr: string[] = [];
-  if (completedDatesStr) {
-    completedDatesArr = completedDatesStr.split(',').filter(Boolean);
+  // Support both completedDate (single) and completionsStr (comma-separated)
+  let completionsArr: string[] = [];
+  if (completionsStr) {
+    completionsArr = completionsStr.split(',').filter(Boolean);
   } else if (completedDate) {
-    completedDatesArr = [completedDate];
+    completionsArr = [completedDate];
   }
   const newHabit = {
     id: uuidv4(),
     name,
-    completedDates: completedDatesArr,
+    completions: completionsArr,
     tags: [],
     notes: [],
     expectedFrequency: expectedFrequency || '',
     userId: userId || '',
+    frequency: parseInt(expectedFrequency?.replace(/[^0-9]/g, '') || '7'),
+    completed: false,
     fields: {
       Title: name,
       Name: name,
-      CompletedDates: completedDatesArr.join(',')
+      CompletedDates: completionsArr.join(',')
     }
   };
   habits.push(newHabit);
   return {
     id: newHabit.id,
     name: newHabit.name,
-    completedDates: newHabit.completedDates,
+    completions: newHabit.completions,
     tags: newHabit.tags,
     notes: newHabit.notes,
     expectedFrequency: newHabit.expectedFrequency,
+    frequency: newHabit.frequency,
+    completed: newHabit.completed,
     fields: newHabit.fields
   };
 }
 
-export async function updateHabit(itemId: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+export async function updateHabit(itemId: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
   const habitIndex = habits.findIndex(h => h.id === itemId);
   if (habitIndex === -1) {
     throw new NotFoundError(`Item with ID ${itemId} not found`);
@@ -88,9 +98,9 @@ export async function updateHabit(itemId: string, name?: string, completedDatesS
   if (name) {
     habits[habitIndex].name = name;
   }
-  if (completedDatesStr !== undefined) {
-    let arr = completedDatesStr ? completedDatesStr.split(',').filter(Boolean) : [];
-    habits[habitIndex].completedDates = arr;
+  if (completionsStr !== undefined) {
+    let arr = completionsStr ? completionsStr.split(',').filter(Boolean) : [];
+    habits[habitIndex].completions = arr;
     if (!habits[habitIndex].fields) habits[habitIndex].fields = {};
     habits[habitIndex].fields.CompletedDates = arr.join(',');
   }

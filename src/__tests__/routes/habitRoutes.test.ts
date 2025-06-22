@@ -25,29 +25,35 @@ beforeEach(() => {
     {
       id: '1',
       name: 'Morning Exercise',
-      completedDates: ['2025-06-15', '2025-06-16'],
+      completions: ['2025-06-15', '2025-06-16'],
       tags: ['health'],
       notes: [],
-      startDate: '2025-06-01',
-      expectedFrequency: 7
+      expectedFrequency: 7,
+      userId: 'test-user-1',
+      frequency: 7,
+      completed: false
     },
     {
       id: '2',
       name: 'Reading',
-      completedDates: ['2025-06-16'],
+      completions: ['2025-06-16'],
       tags: ['creativity'],
       notes: [],
-      startDate: '2025-06-10',
-      expectedFrequency: 5
+      expectedFrequency: 5,
+      userId: 'test-user-1',
+      frequency: 5,
+      completed: false
     },
     {
       id: '3',
       name: 'Meditation',
-      completedDates: [],
+      completions: [],
       tags: ['relaxation'],
       notes: [],
-      startDate: '2025-06-15',
-      expectedFrequency: 3
+      expectedFrequency: 3,
+      userId: 'test-user-1',
+      frequency: 3,
+      completed: false
     }
   );
 });
@@ -98,17 +104,16 @@ describe('Habit API Integration', () => {  describe('GET /habits', () => {
         .post('/habits')
         .set('Authorization', `Bearer ${testToken}`)
         .send({ name: 'Habit to Update' });
-      const habitId = createRes.body.data.id;
-      const res = await request(app)
+      const habitId = createRes.body.data.id;      const res = await request(app)
         .put(`/habits/${habitId}`)
         .set('Authorization', `Bearer ${testToken}`)
-        .send({ name: 'Updated Habit Name', completedDates: ['2025-06-18'] });
-      console.log('DEBUG completedDates:', res.body.data.completedDates);
+        .send({ name: 'Updated Habit Name', completions: ['2025-06-18'] });
+      console.log('DEBUG completions:', res.body.data.completions);
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('status', 'success');
       expect(res.body.data).toHaveProperty('id', habitId);
       expect(res.body.data).toHaveProperty('name', 'Updated Habit Name');
-      expect(res.body.data.completedDates).toContain('2025-06-18');
+      expect(res.body.data.completions).toContain('2025-06-18');
     });
   });
   describe('DELETE /habits/:id', () => {

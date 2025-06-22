@@ -19,21 +19,18 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
       error: 'Access token required',
       message: 'Please provide a valid authentication token' 
     });
-  }
+  }  const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 
-  const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
-
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) {
-      return res.status(403).json({ 
-        error: 'Invalid token',
-        message: 'Token is invalid or expired' 
-      });
-    }
-
-    req.user = user;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    req.user = decoded;
     next();
-  });
+  } catch (err) {
+    return res.status(403).json({ 
+      error: 'Invalid token',
+      message: 'Token is invalid or expired' 
+    });
+  }
 };
 
 export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -44,17 +41,14 @@ export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: Nex
     // No token provided, continue without user info
     req.user = undefined;
     return next();
+  }  const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    req.user = decoded;
+  } catch (err) {
+    // Invalid token, continue without user info
+    req.user = undefined;
   }
-
-  const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
-
-  jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
-    if (err) {
-      // Invalid token, continue without user info
-      req.user = undefined;
-    } else {
-      req.user = user;
-    }
-    next();
-  });
+  next();
 };
