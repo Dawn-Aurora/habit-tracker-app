@@ -411,24 +411,42 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
         if (!habit) throw new NotFoundError('Habit not found');        // Calculate metrics directly without the complex Habit model logic
         const completedDates: string[] = habit.completedDates || [];
         const totalCompletions = completedDates.length;
-        
-        // Calculate completion rate safely
+          // Calculate completion rate for this week
         let completionRate = 0;
-        let effectiveStartDate = habit.startDate;
         
         if (totalCompletions > 0) {
-            // If no start date, use the earliest completion date
-            if (!effectiveStartDate || effectiveStartDate === '') {
-                const sortedDates = completedDates.map((d: string) => new Date(d)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
-                effectiveStartDate = sortedDates[0].toISOString().slice(0, 10);
-            }
+            // Calculate completion rate for this week (Monday to Sunday)
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
             
-            const startDateObj = new Date(effectiveStartDate);
-            const currentDate = new Date();
+            // Get Monday of this week
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            monday.setHours(0, 0, 0, 0);
             
-            if (!isNaN(startDateObj.getTime())) {
-                const daysSinceStart = Math.max(1, Math.ceil((currentDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
-                completionRate = totalCompletions / daysSinceStart; // Return as decimal (0.0 to 1.0)
+            // Get Sunday of this week
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            sunday.setHours(23, 59, 59, 999);
+            
+            // Count completions in this week
+            const thisWeekCompletions = completedDates.filter((dateStr: string) => {
+                const completionDate = new Date(dateStr);
+                return completionDate >= monday && completionDate <= sunday;
+            }).length;
+            
+            // Calculate days elapsed in this week (up to today)
+            const daysElapsedThisWeek = Math.min(
+                Math.floor((today.getTime() - monday.getTime()) / (1000 * 60 * 60 * 24)) + 1,
+                7
+            );
+            
+            console.log('DEBUG: This week range:', monday.toISOString().slice(0, 10), 'to', sunday.toISOString().slice(0, 10));
+            console.log('DEBUG: This week completions:', thisWeekCompletions);
+            console.log('DEBUG: Days elapsed this week:', daysElapsedThisWeek);
+            
+            if (daysElapsedThisWeek > 0) {
+                completionRate = thisWeekCompletions / daysElapsedThisWeek; // Return as decimal (0.0 to 1.0)
             }
         }
         
@@ -449,19 +467,16 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
                 }
             }
         }
-        
-        console.log('DEBUG: Direct calculation results:', {
+          console.log('DEBUG: This week calculation results:', {
             totalCompletions,
             completionRate,
-            currentStreak,
-            effectiveStartDate
+            currentStreak
         });
         
         const metrics = {
             currentStreak: currentStreak,
             totalCompletions: totalCompletions,
             completionRate: completionRate,
-            startDate: effectiveStartDate,
             expectedFrequency: habit.expectedFrequency || habit.ExpectedFrequency || ''
         };
         res.json({ status: 'success', data: metrics });

@@ -91,8 +91,7 @@ function MetricsView({ habitId, onClose }) {
               <div style={{ fontSize: '0.9em', color: '#666' }}>Total Completions</div>
             </div>
           </div>
-          
-          <div style={{ 
+            <div style={{ 
             textAlign: 'center', 
             padding: '16px', 
             backgroundColor: '#fff3e0',
@@ -101,11 +100,10 @@ function MetricsView({ habitId, onClose }) {
             <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#ff9800' }}>
               {(metrics.completionRate * 100).toFixed(1)}%
             </div>
-            <div style={{ fontSize: '0.9em', color: '#666' }}>Completion Rate</div>
+            <div style={{ fontSize: '0.9em', color: '#666' }}>This Week Completion Rate</div>
           </div>
           
           <div style={{ fontSize: '0.9em', color: '#666', marginTop: '8px' }}>
-            <div><strong>Start Date:</strong> {metrics.startDate ? new Date(metrics.startDate).toLocaleDateString() : 'Not set'}</div>
             <div><strong>Expected Frequency:</strong> {metrics.expectedFrequency || 'Not set'}</div>
           </div>
         </div>
