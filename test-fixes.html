@@ -49,13 +49,14 @@
                     log('Total Completions: ' + metricsData.data.totalCompletions);
                     log('Completion Rate: ' + (metricsData.data.completionRate * 100).toFixed(1) + '%');
                     log('Start Date: ' + metricsData.data.startDate);
-                    
-                    // Check if completion rate is reasonable (not 20000%)
+                      // Check if completion rate is reasonable (not 20000% or 30000%)
                     const completionPercentage = metricsData.data.completionRate * 100;
                     if (completionPercentage > 200) {
                         log('❌ Completion rate still broken: ' + completionPercentage.toFixed(1) + '%');
+                        log('Debug: Start date = "' + metricsData.data.startDate + '"');
+                        log('Debug: Total completions = ' + metricsData.data.totalCompletions);
                     } else {
-                        log('✅ Completion rate looks good: ' + completionPercentage.toFixed(1) + '%');
+                        log('✅ Completion rate is now FIXED: ' + completionPercentage.toFixed(1) + '%');
                     }
                 } else {
                     log('No habits found to test with');

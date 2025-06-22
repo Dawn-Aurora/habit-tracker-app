@@ -61,13 +61,17 @@ class Habit {
     getCompletionRate(): number {
         // Handle empty or invalid start dates
         let startDate = this.startDate;
+        console.log('DEBUG: Original startDate:', startDate);
+        
         if (!startDate || startDate === '') {
             // If no start date, use the earliest completion date or today
             if (this.completions.length > 0) {
                 const completionDates = this.completions.map(d => new Date(d)).sort((a, b) => a.getTime() - b.getTime());
                 startDate = completionDates[0].toISOString().slice(0, 10);
+                console.log('DEBUG: Using earliest completion date as start:', startDate);
             } else {
                 startDate = new Date().toISOString().slice(0, 10);
+                console.log('DEBUG: Using today as start date:', startDate);
             }
         }
         
@@ -76,13 +80,20 @@ class Habit {
         
         // Ensure start date is valid
         if (isNaN(startDateObj.getTime())) {
+            console.log('DEBUG: Invalid start date, returning 0');
             return 0;
         }
         
         const daysSinceStart = Math.max(1, Math.ceil((currentDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+        const totalCompletions = this.getTotalCompletions();
+        
+        console.log('DEBUG: Days since start:', daysSinceStart);
+        console.log('DEBUG: Total completions:', totalCompletions);
         
         // Return as decimal (0.0 to 1.0) so frontend can display as percentage
-        return this.getTotalCompletions() / daysSinceStart;
+        const rate = totalCompletions / daysSinceStart;
+        console.log('DEBUG: Calculated rate (decimal):', rate);
+        return rate;
     }
 }
 

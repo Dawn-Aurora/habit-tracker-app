@@ -440,14 +440,22 @@ const getHabitMetrics = (req, res) => __awaiter(void 0, void 0, void 0, function
         const habits = yield dataClient.getHabits(userId);
         const habit = habits.find((h) => h.id === id);
         if (!habit)
-            throw new validation_1.NotFoundError('Habit not found');
-        // Convert to Habit model for metrics
+            throw new validation_1.NotFoundError('Habit not found'); // Convert to Habit model for metrics
         const habitModel = new Habit_1.default(habit.id, habit.name, habit.frequency || 1, habit.tags || [], habit.startDate, habit.expectedFrequency);
         habitModel.completions = habit.completedDates || [];
+        console.log('DEBUG: Habit data for metrics:', {
+            id: habit.id,
+            name: habit.name,
+            startDate: habit.startDate,
+            completedDates: habit.completedDates,
+            completions: habitModel.completions
+        });
+        const completionRate = habitModel.getCompletionRate();
+        console.log('DEBUG: Calculated completion rate:', completionRate);
         const metrics = {
             currentStreak: habitModel.getCurrentStreak(),
             totalCompletions: habitModel.getTotalCompletions(),
-            completionRate: habitModel.getCompletionRate(),
+            completionRate: completionRate,
             startDate: habitModel.startDate,
             expectedFrequency: habitModel.expectedFrequency
         };
