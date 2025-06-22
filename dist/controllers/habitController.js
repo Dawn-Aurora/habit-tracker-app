@@ -41,9 +41,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHabitMetrics = exports.getHabitsByTag = exports.addHabitNote = exports.markHabitCompleted = exports.deleteHabit = exports.updateHabit = exports.createHabit = exports.getHabits = void 0;
 const dotenv = __importStar(require("dotenv"));
@@ -430,7 +427,6 @@ const getHabitsByTag = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.getHabitsByTag = getHabitsByTag;
-const Habit_1 = __importDefault(require("../models/Habit"));
 const getHabitMetrics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -440,24 +436,54 @@ const getHabitMetrics = (req, res) => __awaiter(void 0, void 0, void 0, function
         const habits = yield dataClient.getHabits(userId);
         const habit = habits.find((h) => h.id === id);
         if (!habit)
-            throw new validation_1.NotFoundError('Habit not found'); // Convert to Habit model for metrics
-        const habitModel = new Habit_1.default(habit.id, habit.name, habit.frequency || 1, habit.tags || [], habit.startDate, habit.expectedFrequency);
-        habitModel.completions = habit.completedDates || [];
-        console.log('DEBUG: Habit data for metrics:', {
-            id: habit.id,
-            name: habit.name,
-            startDate: habit.startDate,
-            completedDates: habit.completedDates,
-            completions: habitModel.completions
+            throw new validation_1.NotFoundError('Habit not found'); // Calculate metrics directly without the complex Habit model logic
+        const completedDates = habit.completedDates || [];
+        const totalCompletions = completedDates.length;
+        // Calculate completion rate safely
+        let completionRate = 0;
+        let effectiveStartDate = habit.startDate;
+        if (totalCompletions > 0) {
+            // If no start date, use the earliest completion date
+            if (!effectiveStartDate || effectiveStartDate === '') {
+                const sortedDates = completedDates.map((d) => new Date(d)).sort((a, b) => a.getTime() - b.getTime());
+                effectiveStartDate = sortedDates[0].toISOString().slice(0, 10);
+            }
+            const startDateObj = new Date(effectiveStartDate);
+            const currentDate = new Date();
+            if (!isNaN(startDateObj.getTime())) {
+                const daysSinceStart = Math.max(1, Math.ceil((currentDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                completionRate = totalCompletions / daysSinceStart; // Return as decimal (0.0 to 1.0)
+            }
+        }
+        // Calculate current streak
+        let currentStreak = 0;
+        if (completedDates.length > 0) {
+            const dates = completedDates.map((d) => new Date(d)).sort((a, b) => b.getTime() - a.getTime());
+            let current = new Date();
+            current.setHours(0, 0, 0, 0); // Reset to start of day
+            for (let d of dates) {
+                d.setHours(0, 0, 0, 0); // Reset to start of day
+                if (d.getTime() === current.getTime()) {
+                    currentStreak++;
+                    current.setDate(current.getDate() - 1);
+                }
+                else {
+                    break;
+                }
+            }
+        }
+        console.log('DEBUG: Direct calculation results:', {
+            totalCompletions,
+            completionRate,
+            currentStreak,
+            effectiveStartDate
         });
-        const completionRate = habitModel.getCompletionRate();
-        console.log('DEBUG: Calculated completion rate:', completionRate);
         const metrics = {
-            currentStreak: habitModel.getCurrentStreak(),
-            totalCompletions: habitModel.getTotalCompletions(),
+            currentStreak: currentStreak,
+            totalCompletions: totalCompletions,
             completionRate: completionRate,
-            startDate: habitModel.startDate,
-            expectedFrequency: habitModel.expectedFrequency
+            startDate: effectiveStartDate,
+            expectedFrequency: habit.expectedFrequency || habit.ExpectedFrequency || ''
         };
         res.json({ status: 'success', data: metrics });
     }

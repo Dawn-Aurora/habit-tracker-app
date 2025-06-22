@@ -408,27 +408,61 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
         validateHabitId(id);
         const habits = await dataClient.getHabits(userId);
         const habit = habits.find((h: any) => h.id === id);
-        if (!habit) throw new NotFoundError('Habit not found');        // Convert to Habit model for metrics
-        const habitModel = new HabitModel(habit.id, habit.name, habit.frequency || 1, habit.tags || [], habit.startDate, habit.expectedFrequency);
-        habitModel.completions = habit.completedDates || [];
+        if (!habit) throw new NotFoundError('Habit not found');        // Calculate metrics directly without the complex Habit model logic
+        const completedDates: string[] = habit.completedDates || [];
+        const totalCompletions = completedDates.length;
         
-        console.log('DEBUG: Habit data for metrics:', {
-            id: habit.id,
-            name: habit.name,
-            startDate: habit.startDate,
-            completedDates: habit.completedDates,
-            completions: habitModel.completions
+        // Calculate completion rate safely
+        let completionRate = 0;
+        let effectiveStartDate = habit.startDate;
+        
+        if (totalCompletions > 0) {
+            // If no start date, use the earliest completion date
+            if (!effectiveStartDate || effectiveStartDate === '') {
+                const sortedDates = completedDates.map((d: string) => new Date(d)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
+                effectiveStartDate = sortedDates[0].toISOString().slice(0, 10);
+            }
+            
+            const startDateObj = new Date(effectiveStartDate);
+            const currentDate = new Date();
+            
+            if (!isNaN(startDateObj.getTime())) {
+                const daysSinceStart = Math.max(1, Math.ceil((currentDate.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+                completionRate = totalCompletions / daysSinceStart; // Return as decimal (0.0 to 1.0)
+            }
+        }
+        
+        // Calculate current streak
+        let currentStreak = 0;
+        if (completedDates.length > 0) {
+            const dates = completedDates.map((d: string) => new Date(d)).sort((a: Date, b: Date) => b.getTime() - a.getTime());
+            let current = new Date();
+            current.setHours(0, 0, 0, 0); // Reset to start of day
+            
+            for (let d of dates) {
+                d.setHours(0, 0, 0, 0); // Reset to start of day
+                if (d.getTime() === current.getTime()) {
+                    currentStreak++;
+                    current.setDate(current.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        console.log('DEBUG: Direct calculation results:', {
+            totalCompletions,
+            completionRate,
+            currentStreak,
+            effectiveStartDate
         });
         
-        const completionRate = habitModel.getCompletionRate();
-        console.log('DEBUG: Calculated completion rate:', completionRate);
-        
         const metrics = {
-            currentStreak: habitModel.getCurrentStreak(),
-            totalCompletions: habitModel.getTotalCompletions(),
+            currentStreak: currentStreak,
+            totalCompletions: totalCompletions,
             completionRate: completionRate,
-            startDate: habitModel.startDate,
-            expectedFrequency: habitModel.expectedFrequency
+            startDate: effectiveStartDate,
+            expectedFrequency: habit.expectedFrequency || habit.ExpectedFrequency || ''
         };
         res.json({ status: 'success', data: metrics });
     } catch (error: any) {
