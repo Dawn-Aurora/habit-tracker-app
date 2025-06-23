@@ -112,18 +112,17 @@ export async function updateHabit(itemId: string, name?: string, completionsStr?
   }
   if (expectedFrequency !== undefined) {
     habits[habitIndex].expectedFrequency = expectedFrequency;
-  }
-  return {
+  }  return {
     id: habits[habitIndex].id,
     name: habits[habitIndex].name,
-    completedDates: [...habits[habitIndex].completedDates],
+    completedDates: [...habits[habitIndex].completions], // Fix: use completions, not completedDates
     tags: habits[habitIndex].tags,
     notes: habits[habitIndex].notes,
     expectedFrequency: habits[habitIndex].expectedFrequency,
     fields: {
       Title: habits[habitIndex].name,
       Name: habits[habitIndex].name,
-      CompletedDates: habits[habitIndex].completedDates.join(',')
+      CompletedDates: habits[habitIndex].completions.join(',') // Fix: use completions, not completedDates
     }
   };
 }

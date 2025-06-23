@@ -19,7 +19,9 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
       error: 'Access token required',
       message: 'Please provide a valid authentication token' 
     });
-  }  const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+  }
+
+  const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;

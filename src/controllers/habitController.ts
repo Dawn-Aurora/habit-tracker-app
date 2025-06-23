@@ -22,12 +22,11 @@ const dataClient = useMock
         async getHabits(userId?: string) {
             const allHabits = await mockDataClient.getHabits();
             return filterHabitsByUser(allHabits, userId);
+        },        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
+            return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
         },
-        async createHabit(name: string, completedDate?: string, completedDatesStr?: string, expectedFrequency?: string, userId?: string) {
-            return await mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
-        },
-        async updateHabit(id: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
-            return await mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
+        async updateHabit(id: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+            return await mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
         },
         async deleteHabit(id: string, userId?: string) {
             return await mockDataClient.deleteHabit(id, userId);
@@ -42,19 +41,17 @@ const dataClient = useMock
                 const allHabits = await mockDataClient.getHabits();
                 return filterHabitsByUser(allHabits, userId);
             }
-        },
-        async createHabit(name: string, completedDate?: string, completedDatesStr?: string, expectedFrequency?: string, userId?: string) {
+        },        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
             try {
-                return await sharepointClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
+                return await sharepointClient.createHabit(name, completedDate, completionsStr, expectedFrequency);
             } catch (e) {
-                return await mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
+                return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
             }
-        },
-        async updateHabit(id: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+        },        async updateHabit(id: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
             try {
-                return await sharepointClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
+                return await sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency);
             } catch (e) {
-                return await mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
+                return await mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
             }
         },
         async deleteHabit(id: string) {
@@ -230,7 +227,7 @@ export const createHabit = async (req: Request, res: Response) => {
 export const updateHabit = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, completedDates, tags, notes, expectedFrequency } = req.body;
+        const { name, completedDates, completions, tags, notes, expectedFrequency } = req.body;
         validateHabitId(id);
         
         // Fetch the current habit to preserve existing fields
@@ -241,14 +238,17 @@ export const updateHabit = async (req: Request, res: Response) => {
         if (name !== undefined && name !== "") {
             validateHabitName(name);
         }
-        if (completedDates !== undefined) {
-            validateCompletedDates(completedDates);
+        
+        // Handle both completedDates and completions (for backward compatibility)
+        const inputCompletions = completions || completedDates;
+        if (inputCompletions !== undefined) {
+            validateCompletedDates(inputCompletions);
         }
         
         // Preserve existing data if not updating
         const finalName = name !== undefined ? sanitizeHabitName(name) : getHabitName(currentHabit);
-        const finalCompletedDates = completedDates !== undefined 
-            ? (Array.isArray(completedDates) ? completedDates : (completedDates ? completedDates.split(',').filter(Boolean) : []))
+        const finalCompletedDates = inputCompletions !== undefined 
+            ? (Array.isArray(inputCompletions) ? inputCompletions : (inputCompletions ? inputCompletions.split(',').filter(Boolean) : []))
             : getExistingValue('completedDates', currentHabit);
         const finalTags = tags !== undefined 
             ? (Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map((t: string) => t.trim()).filter(Boolean) : []))
@@ -259,20 +259,20 @@ export const updateHabit = async (req: Request, res: Response) => {
         const finalExpectedFrequency = expectedFrequency !== undefined 
             ? String(expectedFrequency) 
             : (currentHabit.ExpectedFrequency || currentHabit.expectedFrequency || '');
-        
-        // Convert arrays to strings for SharePoint
-        const completedDatesStr = finalCompletedDates.join(',');
+          // Convert arrays to strings for SharePoint
+        const completionsStr = finalCompletedDates.join(',');
         const tagsStr = finalTags.join(',');
         const notesStr = JSON.stringify(finalNotes);
-        
-        // Update with all fields preserved
+          // Update with all fields preserved
+        const userId = (req as AuthenticatedRequest).user?.id;
         const result = await dataClient.updateHabit(
             id,
             finalName,
-            completedDatesStr,
+            completionsStr,
             tagsStr,
             notesStr,
-            finalExpectedFrequency
+            finalExpectedFrequency,
+            userId
         );
         
         res.json({
@@ -321,13 +321,12 @@ export const markHabitCompleted = async (req: Request, res: Response) => {
         const existingTags = getExistingValue('tags', habit);
         const existingNotes = getExistingValue('notes', habit);
         const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
-        
-        // Convert to strings for SharePoint
-        const completedDatesString = completedDates.join(',');
+          // Convert to strings for SharePoint
+        const completionsString = completedDates.join(',');
         const tagsString = existingTags.join(',');
         const notesString = JSON.stringify(existingNotes);
         
-        await dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency, userId);
+        await dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
         
         res.json({ 
             status: 'success', 
@@ -365,13 +364,12 @@ export const addHabitNote = async (req: Request, res: Response) => {
         
         // Add new note
         existingNotes.push({ date: date || new Date().toISOString().slice(0, 10), text: noteText });
-        
-        // Convert arrays to strings for SharePoint
-        const completedDatesString = existingCompletedDates.join(',');
+          // Convert arrays to strings for SharePoint
+        const completionsString = existingCompletedDates.join(',');
         const tagsString = existingTags.join(',');
         const notesString = JSON.stringify(existingNotes);
         
-        await dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency);
+        await dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency);
         
         res.json({ 
             status: 'success', 

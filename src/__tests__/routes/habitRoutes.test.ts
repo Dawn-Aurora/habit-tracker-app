@@ -10,11 +10,16 @@ app.use('/habits', habitRouter);
 
 // Helper function to generate JWT token for testing
 const generateTestToken = (userId: string = 'test-user-1'): string => {
-  return jwt.sign(
+  // Use same JWT_SECRET as middleware for consistency
+  const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+  
+  const token = jwt.sign(
     { userId, email: 'test@example.com' },
-    process.env.JWT_SECRET || 'test-secret',
+    JWT_SECRET,
     { expiresIn: '1h' }
   );
+  
+  return token;
 };
 
 const testToken = generateTestToken();
@@ -98,22 +103,20 @@ describe('Habit API Integration', () => {  describe('GET /habits', () => {
         .send({ name: 'Does Not Exist' });
       expect([400, 404]).toContain(res.status);
       expect(res.body).toHaveProperty('status', 'error');
-    });
-    it('should update an existing habit', async () => {
+    });    it('should update an existing habit', async () => {
       const createRes = await request(app)
         .post('/habits')
         .set('Authorization', `Bearer ${testToken}`)
         .send({ name: 'Habit to Update' });
-      const habitId = createRes.body.data.id;      const res = await request(app)
+      
+      const habitId = createRes.body.data.id;const res = await request(app)
         .put(`/habits/${habitId}`)
         .set('Authorization', `Bearer ${testToken}`)
-        .send({ name: 'Updated Habit Name', completions: ['2025-06-18'] });
-      console.log('DEBUG completions:', res.body.data.completions);
-      expect(res.status).toBe(200);
+        .send({ name: 'Updated Habit Name', completions: ['2025-06-18'] });      expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('status', 'success');
       expect(res.body.data).toHaveProperty('id', habitId);
       expect(res.body.data).toHaveProperty('name', 'Updated Habit Name');
-      expect(res.body.data.completions).toContain('2025-06-18');
+      expect(res.body.data.completedDates).toContain('2025-06-18'); // Fixed: use completedDates not completions
     });
   });
   describe('DELETE /habits/:id', () => {
@@ -123,12 +126,12 @@ describe('Habit API Integration', () => {  describe('GET /habits', () => {
         .set('Authorization', `Bearer ${testToken}`);
       expect([400, 404]).toContain(res.status);
       expect(res.body).toHaveProperty('status', 'error');
-    });
-    it('should delete an existing habit', async () => {
+    });    it('should delete an existing habit', async () => {
       const createRes = await request(app)
         .post('/habits')
         .set('Authorization', `Bearer ${testToken}`)
         .send({ name: 'Habit to Delete' });
+      
       const habitId = createRes.body.data.id;
       const res = await request(app)
         .delete(`/habits/${habitId}`)
