@@ -64,15 +64,14 @@ const dataClient = useMock
                 const allHabits = yield mockDataClient.getHabits();
                 return filterHabitsByUser(allHabits, userId);
             });
-        },
-        createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId) {
+        }, createHabit(name, completedDate, completionsStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function* () {
-                return yield mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
+                return yield mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
             });
         },
-        updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId) {
+        updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function* () {
-                return yield mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
+                return yield mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
             });
         },
         deleteHabit(id, userId) {
@@ -93,24 +92,22 @@ const dataClient = useMock
                     return filterHabitsByUser(allHabits, userId);
                 }
             });
-        },
-        createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId) {
+        }, createHabit(name, completedDate, completionsStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
-                    return yield sharepointClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency);
+                    return yield sharepointClient.createHabit(name, completedDate, completionsStr, expectedFrequency);
                 }
                 catch (e) {
-                    return yield mockDataClient.createHabit(name, completedDate, completedDatesStr, expectedFrequency, userId);
+                    return yield mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
                 }
             });
-        },
-        updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId) {
+        }, updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
-                    return yield sharepointClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency);
+                    return yield sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency);
                 }
                 catch (e) {
-                    return yield mockDataClient.updateHabit(id, name, completedDatesStr, tagsStr, notesStr, expectedFrequency, userId);
+                    return yield mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
                 }
             });
         },
@@ -295,11 +292,11 @@ const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             ? String(expectedFrequency)
             : (currentHabit.ExpectedFrequency || currentHabit.expectedFrequency || '');
         // Convert arrays to strings for SharePoint
-        const completedDatesStr = finalCompletedDates.join(',');
+        const completionsStr = finalCompletedDates.join(',');
         const tagsStr = finalTags.join(',');
         const notesStr = JSON.stringify(finalNotes);
         // Update with all fields preserved
-        const result = yield dataClient.updateHabit(id, finalName, completedDatesStr, tagsStr, notesStr, finalExpectedFrequency);
+        const result = yield dataClient.updateHabit(id, finalName, completionsStr, tagsStr, notesStr, finalExpectedFrequency);
         res.json({
             status: 'success',
             data: {
@@ -352,10 +349,10 @@ const markHabitCompleted = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const existingNotes = getExistingValue('notes', habit);
         const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
         // Convert to strings for SharePoint
-        const completedDatesString = completedDates.join(',');
+        const completionsString = completedDates.join(',');
         const tagsString = existingTags.join(',');
         const notesString = JSON.stringify(existingNotes);
-        yield dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency, userId);
+        yield dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
         res.json({
             status: 'success',
             data: {
@@ -394,10 +391,10 @@ const addHabitNote = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         // Add new note
         existingNotes.push({ date: date || new Date().toISOString().slice(0, 10), text: noteText });
         // Convert arrays to strings for SharePoint
-        const completedDatesString = existingCompletedDates.join(',');
+        const completionsString = existingCompletedDates.join(',');
         const tagsString = existingTags.join(',');
         const notesString = JSON.stringify(existingNotes);
-        yield dataClient.updateHabit(id, getHabitName(habit), completedDatesString, tagsString, notesString, existingFrequency);
+        yield dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency);
         res.json({
             status: 'success',
             data: {
