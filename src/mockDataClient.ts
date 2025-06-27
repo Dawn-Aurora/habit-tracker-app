@@ -44,6 +44,7 @@ export async function getHabits() {
     Name: h.name,
     Title: h.name,
     CompletedDates: h.completions.join(','),
+    completedDates: h.completions, // Add this field for direct access
     expectedFrequency: h.expectedFrequency || '',
     userId: h.userId || ''
   }));
