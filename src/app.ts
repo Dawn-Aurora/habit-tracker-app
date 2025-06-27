@@ -7,7 +7,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import habitRouter from './routes/habitRoutes';
 import authRouter from './routes/authRoutes';
-import { specs, swaggerUi } from './swagger';
+// Temporarily disabled Swagger due to deployment error
+// import { specs, swaggerUi } from './swagger';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -58,12 +59,13 @@ app.get('/', (req, res) => {
       '/habits': 'GET - List user habits, POST - Create new habit',
       '/habits/:id': 'GET - Get habit by ID, PUT - Update habit, DELETE - Delete habit'
     },
-    documentation: 'Visit /api-docs for interactive API documentation'
+    documentation: 'Swagger docs temporarily disabled for deployment'
+    // documentation: 'Visit /api-docs for interactive API documentation'
   });
 });
 
-// API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+// API Documentation - Temporarily disabled due to deployment error
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Routes
 app.use('/auth', authRouter);

@@ -262,9 +262,10 @@ const createHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 });
 exports.createHabit = createHabit;
 const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { id } = req.params;
-        const { name, completedDates, tags, notes, expectedFrequency } = req.body;
+        const { name, completedDates, completions, tags, notes, expectedFrequency } = req.body;
         (0, validation_1.validateHabitId)(id);
         // Fetch the current habit to preserve existing fields
         const currentHabit = (yield dataClient.getHabits()).find((h) => h.id === id);
@@ -274,13 +275,15 @@ const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (name !== undefined && name !== "") {
             (0, validation_1.validateHabitName)(name);
         }
-        if (completedDates !== undefined) {
-            (0, validation_1.validateCompletedDates)(completedDates);
+        // Handle both completedDates and completions (for backward compatibility)
+        const inputCompletions = completions || completedDates;
+        if (inputCompletions !== undefined) {
+            (0, validation_1.validateCompletedDates)(inputCompletions);
         }
         // Preserve existing data if not updating
         const finalName = name !== undefined ? (0, validation_1.sanitizeHabitName)(name) : getHabitName(currentHabit);
-        const finalCompletedDates = completedDates !== undefined
-            ? (Array.isArray(completedDates) ? completedDates : (completedDates ? completedDates.split(',').filter(Boolean) : []))
+        const finalCompletedDates = inputCompletions !== undefined
+            ? (Array.isArray(inputCompletions) ? inputCompletions : (inputCompletions ? inputCompletions.split(',').filter(Boolean) : []))
             : getExistingValue('completedDates', currentHabit);
         const finalTags = tags !== undefined
             ? (Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map((t) => t.trim()).filter(Boolean) : []))
@@ -296,7 +299,8 @@ const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const tagsStr = finalTags.join(',');
         const notesStr = JSON.stringify(finalNotes);
         // Update with all fields preserved
-        const result = yield dataClient.updateHabit(id, finalName, completionsStr, tagsStr, notesStr, finalExpectedFrequency);
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        const result = yield dataClient.updateHabit(id, finalName, completionsStr, tagsStr, notesStr, finalExpectedFrequency, userId);
         res.json({
             status: 'success',
             data: {

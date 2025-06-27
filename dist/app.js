@@ -11,7 +11,8 @@ const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const habitRoutes_1 = __importDefault(require("./routes/habitRoutes"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
-const swagger_1 = require("./swagger");
+// Temporarily disabled Swagger due to deployment error
+// import { specs, swaggerUi } from './swagger';
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 // Security middleware
@@ -56,11 +57,12 @@ app.get('/', (req, res) => {
             '/habits': 'GET - List user habits, POST - Create new habit',
             '/habits/:id': 'GET - Get habit by ID, PUT - Update habit, DELETE - Delete habit'
         },
-        documentation: 'Visit /api-docs for interactive API documentation'
+        documentation: 'Swagger docs temporarily disabled for deployment'
+        // documentation: 'Visit /api-docs for interactive API documentation'
     });
 });
-// API Documentation
-app.use('/api-docs', swagger_1.swaggerUi.serve, swagger_1.swaggerUi.setup(swagger_1.specs));
+// API Documentation - Temporarily disabled due to deployment error
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 // Routes
 app.use('/auth', authRoutes_1.default);
 app.use('/habits', habitRoutes_1.default);
