@@ -3,7 +3,17 @@ import api from '../api';
 
 function EditHabitForm({ habit, onHabitUpdated }) {
   const [name, setName] = useState(habit.name);
-  const [expectedFrequency, setExpectedFrequency] = useState(habit.expectedFrequency || '');
+  
+  // Helper function to format frequency for editing
+  const formatFrequencyForEdit = (expectedFrequency) => {
+    if (typeof expectedFrequency === 'object' && expectedFrequency !== null) {
+      const { count, period } = expectedFrequency;
+      return `${count} time${count > 1 ? 's' : ''} per ${period}`;
+    }
+    return expectedFrequency || '';
+  };
+  
+  const [expectedFrequency, setExpectedFrequency] = useState(formatFrequencyForEdit(habit.expectedFrequency));
   const [tags, setTags] = useState((habit.tags || []).join(', '));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

@@ -8,6 +8,7 @@ const clientId = process.env.SHAREPOINT_CLIENT_ID || "";
 const clientSecret = process.env.SHAREPOINT_CLIENT_SECRET || "";
 const siteId = process.env.SHAREPOINT_SITE_ID || "";
 const listId = process.env.SHAREPOINT_LIST_ID || "";
+const usersListId = process.env.SHAREPOINT_USERS_LIST_ID || "";
 
 const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
 
@@ -20,10 +21,17 @@ const graphClient = Client.initWithMiddleware({
   }
 });
 
-export async function getHabits() {
+export async function getHabits(userId?: string) {
   try {
+    let apiUrl = `/sites/${siteId}/lists/${listId}/items?expand=fields`;
+    
+    // Filter by user if userId is provided
+    if (userId) {
+      apiUrl += `&$filter=fields/UserId eq '${userId}'`;
+    }
+    
     const result = await graphClient
-      .api(`/sites/${siteId}/lists/${listId}/items?expand=fields`)
+      .api(apiUrl)
       .get();
     return result.value.map((item: any) => ({
       ...item.fields,
@@ -35,7 +43,7 @@ export async function getHabits() {
   }
 }
 
-export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
+export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
   const item = {
     fields: {
       Title: name || "",
@@ -43,7 +51,8 @@ export async function createHabit(name: string, completedDate?: string, complete
       CompletedDates: completedDate || "",
       ExpectedFrequency: expectedFrequency || "",
       Tags: tagsStr && tagsStr.length ? tagsStr : "",
-      Notes: notesStr && notesStr.length ? notesStr : "[]"
+      Notes: notesStr && notesStr.length ? notesStr : "[]",
+      UserId: userId || ""
     }
   };
   const result = await graphClient
@@ -93,5 +102,77 @@ export async function deleteHabit(itemId: string) {
       return await deleteHabit(simpleId!);
     }
     throw new Error(`Failed to delete habit: ${error.message}`);
+  }
+}
+
+// User Management Functions for SharePoint
+export async function createUser(email: string, firstName: string, lastName: string, hashedPassword: string) {
+  try {
+    const item = {
+      fields: {
+        Title: email,
+        Email: email,
+        FirstName: firstName,
+        LastName: lastName,
+        HashedPassword: hashedPassword,
+        CreatedDate: new Date().toISOString()
+      }
+    };
+    
+    const result = await graphClient
+      .api(`/sites/${siteId}/lists/${usersListId}/items`)
+      .post(item);
+    
+    return {
+      id: result.id,
+      email: email,
+      firstName: firstName,
+      lastName: lastName
+    };
+  } catch (error: any) {
+    console.error('Error creating user in SharePoint:', error);
+    throw new Error(`Failed to create user: ${error.message}`);
+  }
+}
+
+export async function getUserByEmail(email: string) {
+  try {
+    const result = await graphClient
+      .api(`/sites/${siteId}/lists/${usersListId}/items?expand=fields&$filter=fields/Email eq '${email}'`)
+      .get();
+    
+    if (result.value && result.value.length > 0) {
+      const user = result.value[0];
+      return {
+        id: user.id,
+        email: user.fields.Email,
+        firstName: user.fields.FirstName,
+        lastName: user.fields.LastName,
+        hashedPassword: user.fields.HashedPassword
+      };
+    }
+    
+    return null;
+  } catch (error: any) {
+    console.error('Error getting user by email:', error);
+    throw new Error(`Failed to get user: ${error.message}`);
+  }
+}
+
+export async function getUserById(userId: string) {
+  try {
+    const result = await graphClient
+      .api(`/sites/${siteId}/lists/${usersListId}/items/${userId}?expand=fields`)
+      .get();
+    
+    return {
+      id: result.id,
+      email: result.fields.Email,
+      firstName: result.fields.FirstName,
+      lastName: result.fields.LastName
+    };
+  } catch (error: any) {
+    console.error('Error getting user by ID:', error);
+    throw new Error(`Failed to get user: ${error.message}`);
   }
 }

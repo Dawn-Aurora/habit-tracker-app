@@ -2,39 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError } from './utils/validation';
 
 let habits: any[] = [
-  {
-    id: '1',
-    name: 'Morning Exercise',
-    completions: ['2025-06-15', '2025-06-16'],
-    tags: ['health'],
-    notes: [],
-    expectedFrequency: '7 times/week',
-    userId: '', // Default for backward compatibility
-    frequency: 7,
-    completed: false
-  },
-  {
-    id: '2',
-    name: 'Reading',
-    completions: ['2025-06-16'],
-    tags: ['creativity'],
-    notes: [],
-    expectedFrequency: '5 times/week',
-    userId: '', // Default for backward compatibility
-    frequency: 5,
-    completed: false
-  },
-  {
-    id: '3',
-    name: 'Meditation',
-    completions: [],
-    tags: ['relaxation'],
-    notes: [],
-    expectedFrequency: '3 times/week',
-    userId: '', // Default for backward compatibility
-    frequency: 3,
-    completed: false
-  }
+  // No default habits - users start with a clean slate
 ];
 
 export async function getHabits() {

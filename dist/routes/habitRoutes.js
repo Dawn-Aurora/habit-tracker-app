@@ -381,4 +381,105 @@ router.get('/by-tag', auth_1.optionalAuth, habitController.getHabitsByTag);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/:id/metrics', auth_1.optionalAuth, habitController.getHabitMetrics);
+// Enhanced frequency system routes
+/**
+ * @swagger
+ * /habits/{id}/completions:
+ *   post:
+ *     summary: Add a completion for a habit (supports multiple per day)
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Habit ID
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Completion timestamp (defaults to now)
+ *     responses:
+ *       200:
+ *         description: Completion added successfully
+ *       404:
+ *         description: Habit not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/:id/completions', auth_1.authenticateToken, habitController.addHabitCompletion);
+/**
+ * @swagger
+ * /habits/{id}/completions:
+ *   delete:
+ *     summary: Remove a completion for a habit
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Habit ID
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 description: Date to remove completion from (defaults to today)
+ *     responses:
+ *       200:
+ *         description: Completion removed successfully
+ *       404:
+ *         description: Habit not found
+ *       500:
+ *         description: Server error
+ */
+router.delete('/:id/completions', auth_1.authenticateToken, habitController.removeHabitCompletion);
+/**
+ * @swagger
+ * /habits/{id}/completions:
+ *   get:
+ *     summary: Get completion count for a specific date
+ *     tags: [Habits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Habit ID
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date to check (defaults to today)
+ *     responses:
+ *       200:
+ *         description: Completion count retrieved successfully
+ *       404:
+ *         description: Habit not found
+ *       500:
+ *         description: Server error
+ */
+router.get('/:id/completions', auth_1.authenticateToken, habitController.getHabitCompletionsForDate);
 exports.default = router;

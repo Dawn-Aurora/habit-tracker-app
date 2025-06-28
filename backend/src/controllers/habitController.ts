@@ -14,7 +14,8 @@ const filterHabitsByUser = (habits: any[], userId?: string) => {
     // For backward compatibility, return all habits if no user ID
     return habits;
   }
-  return habits.filter(habit => habit.userId === userId || !habit.userId); // Include habits without userId for backward compatibility
+  // Only return habits that belong to this specific user
+  return habits.filter(habit => habit.userId === userId);
 };
 
 const dataClient = useMock
@@ -22,7 +23,8 @@ const dataClient = useMock
         async getHabits(userId?: string) {
             const allHabits = await mockDataClient.getHabits();
             return filterHabitsByUser(allHabits, userId);
-        },        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
+        },
+        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
             return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
         },
         async updateHabit(id: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
@@ -35,19 +37,20 @@ const dataClient = useMock
     : {
         async getHabits(userId?: string) {
             try {
-                const allHabits = await sharepointClient.getHabits();
-                return filterHabitsByUser(allHabits, userId);
+                return await sharepointClient.getHabits(userId);
             } catch (e) {
                 const allHabits = await mockDataClient.getHabits();
                 return filterHabitsByUser(allHabits, userId);
             }
-        },        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
+        },
+        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
             try {
-                return await sharepointClient.createHabit(name, completedDate, completionsStr, expectedFrequency);
+                return await sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId);
             } catch (e) {
                 return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
             }
-        },        async updateHabit(id: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+        },
+        async updateHabit(id: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
             try {
                 return await sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency);
             } catch (e) {
@@ -168,6 +171,16 @@ export const getHabits = async (req: Request, res: Response) => {
         const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
         const habits = await dataClient.getHabits(userId);
         const transformedHabits = habits.map((habit: any) => {
+            // Parse expectedFrequency - could be string, number, or JSON
+            let expectedFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+            if (typeof expectedFrequency === 'string' && expectedFrequency.startsWith('{')) {
+                try {
+                    expectedFrequency = JSON.parse(expectedFrequency);
+                } catch (e) {
+                    // Keep as string if JSON parsing fails
+                }
+            }
+            
             return {
                 id: habit.id,
                 name: getHabitName(habit),
@@ -175,7 +188,7 @@ export const getHabits = async (req: Request, res: Response) => {
                 tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
                 notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
                 startDate: habit.StartDate || habit.startDate || '',
-                expectedFrequency: habit.ExpectedFrequency || habit.expectedFrequency || '',
+                expectedFrequency: expectedFrequency,
                 userId: habit.userId
             };
         });
@@ -198,21 +211,32 @@ export const getHabits = async (req: Request, res: Response) => {
 
 export const createHabit = async (req: Request, res: Response) => {
     try {
-        const { name, frequency } = req.body;
+        const { name, frequency, expectedFrequency } = req.body;
         validateHabitName(name);
         const sanitizedName = sanitizeHabitName(name);
         const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
+        
+        // Handle both structured and legacy frequency
+        let frequencyToStore = expectedFrequency || frequency || '';
+        
+        // If it's a structured frequency object, serialize it as JSON for SharePoint
+        if (typeof expectedFrequency === 'object' && expectedFrequency !== null) {
+            frequencyToStore = JSON.stringify(expectedFrequency);
+        }
+        
         // Pass frequency to dataClient as expectedFrequency
-        const result = await dataClient.createHabit(sanitizedName, undefined, "", frequency, userId);
+        const result = await dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId);
+        
         const newHabit = {
             id: result.id,
             name: getHabitName(result, sanitizedName),
             completedDates: (result.fields && result.fields.CompletedDates)
                 ? result.fields.CompletedDates.split(',').filter(Boolean)
                 : result.completedDates || [],
-            expectedFrequency: result.expectedFrequency || frequency || '',
+            expectedFrequency: expectedFrequency || frequency || '', // Return the original format
             userId: result.userId || userId
         };
+        
         validateHabitId(newHabit.id);
         validateHabitName(newHabit.name);
         res.status(201).json({
@@ -406,10 +430,36 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
         validateHabitId(id);
         const habits = await dataClient.getHabits(userId);
         const habit = habits.find((h: any) => h.id === id);
-        if (!habit) throw new NotFoundError('Habit not found');        // Calculate metrics directly without the complex Habit model logic
+        if (!habit) throw new NotFoundError('Habit not found');
+
+        // Helper function to parse expected frequency
+        const parseExpectedFrequency = (frequency: string): { timesPerWeek: number } => {
+            if (!frequency) return { timesPerWeek: 7 }; // Default to daily
+            
+            const freq = frequency.toLowerCase();
+            if (freq.includes('daily') || freq === 'daily') return { timesPerWeek: 7 };
+            if (freq.includes('weekly') || freq === 'weekly') return { timesPerWeek: 1 };
+            
+            // Parse patterns like "2 times/week", "3 times per week", etc.
+            const match = freq.match(/(\d+)\s*times?\s*(?:per\s*|\/)\s*week/);
+            if (match) return { timesPerWeek: parseInt(match[1]) };
+            
+            // Parse patterns like "every 2 days", "every 3 days"
+            const everyMatch = freq.match(/every\s*(\d+)\s*days?/);
+            if (everyMatch) {
+                const days = parseInt(everyMatch[1]);
+                return { timesPerWeek: Math.round(7 / days) };
+            }
+            
+            return { timesPerWeek: 7 }; // Default to daily if can't parse
+        };
+
+        // Calculate metrics directly without the complex Habit model logic
         const completedDates: string[] = habit.completedDates || [];
         const totalCompletions = completedDates.length;
-          // Calculate completion rate for this week
+        const expectedFreq = parseExpectedFrequency(habit.expectedFrequency || habit.ExpectedFrequency || 'daily');
+        
+        // Calculate completion rate for this week
         let completionRate = 0;
         
         if (totalCompletions > 0) {
@@ -442,9 +492,15 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
             console.log('DEBUG: This week range:', monday.toISOString().slice(0, 10), 'to', sunday.toISOString().slice(0, 10));
             console.log('DEBUG: This week completions:', thisWeekCompletions);
             console.log('DEBUG: Days elapsed this week:', daysElapsedThisWeek);
+            console.log('DEBUG: Expected frequency:', expectedFreq.timesPerWeek, 'times per week');
             
-            if (daysElapsedThisWeek > 0) {
-                completionRate = thisWeekCompletions / daysElapsedThisWeek; // Return as decimal (0.0 to 1.0)
+            // Calculate expected completions for this week based on actual frequency
+            const expectedCompletionsThisWeek = expectedFreq.timesPerWeek;
+            
+            if (expectedCompletionsThisWeek > 0) {
+                completionRate = thisWeekCompletions / expectedCompletionsThisWeek; // Return as decimal (0.0 to 1.0)
+                // Cap at 1.0 (100%) if user exceeded their goal
+                completionRate = Math.min(completionRate, 1.0);
             }
         }
         
@@ -478,6 +534,137 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
             expectedFrequency: habit.expectedFrequency || habit.ExpectedFrequency || ''
         };
         res.json({ status: 'success', data: metrics });
+    } catch (error: any) {
+        handleError(error, res);
+    }
+};
+
+// New endpoints for enhanced frequency system
+export const addHabitCompletion = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { date } = req.body;
+        const userId = (req as AuthenticatedRequest).user?.id;
+        
+        validateHabitId(id);
+        const completionDate = date || new Date().toISOString();
+        
+        const habits = await dataClient.getHabits(userId);
+        const habit = habits.find((h: any) => h.id === id);
+        if (!habit) return res.status(404).json({ status: 'error', message: 'Habit not found' });
+        
+        // Get existing completions
+        const completedDates = getExistingValue('completedDates', habit);
+        
+        // Add new completion (allowing multiple per day)
+        completedDates.push(completionDate);
+        
+        // Preserve existing data
+        const existingTags = getExistingValue('tags', habit);
+        const existingNotes = getExistingValue('notes', habit);
+        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+        
+        // Convert to strings for SharePoint
+        const completionsString = completedDates.join(',');
+        const tagsString = existingTags.join(',');
+        const notesString = JSON.stringify(existingNotes);
+        
+        await dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
+        
+        res.json({ 
+            status: 'success', 
+            data: { 
+                id, 
+                completedDates,
+                message: 'Completion added successfully'
+            } 
+        });
+    } catch (error: any) {
+        handleError(error, res);
+    }
+};
+
+export const removeHabitCompletion = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { date } = req.body;
+        const userId = (req as AuthenticatedRequest).user?.id;
+        
+        validateHabitId(id);
+        const completionDate = date || new Date().toISOString().slice(0, 10);
+        
+        const habits = await dataClient.getHabits(userId);
+        const habit = habits.find((h: any) => h.id === id);
+        if (!habit) return res.status(404).json({ status: 'error', message: 'Habit not found' });
+        
+        // Get existing completions
+        const completedDates = getExistingValue('completedDates', habit);
+        
+        // Remove one completion for the specified date
+        const dateOnly = completionDate.slice(0, 10);
+        const index = completedDates.findIndex((completion: string) => 
+            completion.slice(0, 10) === dateOnly
+        );
+        
+        if (index !== -1) {
+            completedDates.splice(index, 1);
+        }
+        
+        // Preserve existing data
+        const existingTags = getExistingValue('tags', habit);
+        const existingNotes = getExistingValue('notes', habit);
+        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+        
+        // Convert to strings for SharePoint
+        const completionsString = completedDates.join(',');
+        const tagsString = existingTags.join(',');
+        const notesString = JSON.stringify(existingNotes);
+        
+        await dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
+        
+        res.json({ 
+            status: 'success', 
+            data: { 
+                id, 
+                completedDates,
+                message: 'Completion removed successfully'
+            } 
+        });
+    } catch (error: any) {
+        handleError(error, res);
+    }
+};
+
+export const getHabitCompletionsForDate = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { date } = req.query;
+        const userId = (req as AuthenticatedRequest).user?.id;
+        
+        validateHabitId(id);
+        const targetDate = (date as string) || new Date().toISOString().slice(0, 10);
+        
+        const habits = await dataClient.getHabits(userId);
+        const habit = habits.find((h: any) => h.id === id);
+        if (!habit) return res.status(404).json({ status: 'error', message: 'Habit not found' });
+        
+        const completedDates = getExistingValue('completedDates', habit);
+        const dateOnly = targetDate.slice(0, 10);
+        const count = completedDates.filter((completion: string) => 
+            completion.slice(0, 10) === dateOnly
+        ).length;
+        
+        res.json({ 
+            status: 'success', 
+            data: { 
+                id, 
+                date: dateOnly,
+                count,
+                completions: completedDates.filter((completion: string) => 
+                    completion.slice(0, 10) === dateOnly
+                )
+            } 
+        });
     } catch (error: any) {
         handleError(error, res);
     }

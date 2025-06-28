@@ -32,7 +32,7 @@ describe('App Component', () => {
     await act(async () => {
       render(<App />);
     });
-    const title = screen.getByText(/habit tracker/i);
+    const title = screen.getByRole('heading', { name: /habit tracker/i, level: 1 });
     expect(title).toBeInTheDocument();
   });
 });

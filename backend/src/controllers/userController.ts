@@ -3,12 +3,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { User, UserCreateInput, UserLoginInput, UserResponse } from '../models/User';
+import * as sharepointClient from '../sharepointClient';
 
-// In-memory user storage (replace with database in production)
+// In-memory user storage (fallback for testing)
 const users: User[] = [];
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
+// Check if we should use SharePoint or mock data
+const useSharePoint = process.env.NODE_ENV !== 'test' && process.env.USE_MOCK_DATA !== 'true';
 
 // Helper function to generate JWT
 const generateToken = (user: User): string => {
@@ -42,15 +46,6 @@ export const registerUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = users.find(user => user.email.toLowerCase() === email.toLowerCase());
-    if (existingUser) {
-      return res.status(409).json({
-        error: 'User already exists',
-        message: 'A user with this email already exists'
-      });
-    }
-
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -68,22 +63,76 @@ export const registerUser = async (req: Request, res: Response) => {
       });
     }
 
+    // Check if user already exists
+    let existingUser;
+    if (useSharePoint) {
+      try {
+        existingUser = await sharepointClient.getUserByEmail(email.toLowerCase());
+      } catch (error) {
+        // If SharePoint fails, check in-memory storage
+        existingUser = users.find(user => user.email.toLowerCase() === email.toLowerCase());
+      }
+    } else {
+      existingUser = users.find(user => user.email.toLowerCase() === email.toLowerCase());
+    }
+
+    if (existingUser) {
+      return res.status(409).json({
+        error: 'User already exists',
+        message: 'A user with this email already exists'
+      });
+    }
+
     // Hash password
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Create new user
-    const newUser: User = {
-      id: uuidv4(),
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    users.push(newUser);
+    let newUser: User;
+    
+    if (useSharePoint) {
+      try {
+        const sharePointUser = await sharepointClient.createUser(
+          email.toLowerCase(),
+          firstName.trim(),
+          lastName.trim(),
+          hashedPassword
+        );
+        
+        newUser = {
+          id: sharePointUser.id,
+          email: sharePointUser.email,
+          password: hashedPassword,
+          firstName: sharePointUser.firstName,
+          lastName: sharePointUser.lastName,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      } catch (error) {
+        // Fallback to in-memory storage
+        newUser = {
+          id: uuidv4(),
+          email: email.toLowerCase(),
+          password: hashedPassword,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        users.push(newUser);
+      }
+    } else {
+      newUser = {
+        id: uuidv4(),
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      users.push(newUser);
+    }
 
     // Generate token
     const token = generateToken(newUser);
@@ -115,7 +164,29 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     // Find user
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    let user;
+    if (useSharePoint) {
+      try {
+        const sharePointUser = await sharepointClient.getUserByEmail(email.toLowerCase());
+        if (sharePointUser) {
+          user = {
+            id: sharePointUser.id,
+            email: sharePointUser.email,
+            password: sharePointUser.hashedPassword,
+            firstName: sharePointUser.firstName,
+            lastName: sharePointUser.lastName,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+        }
+      } catch (error) {
+        // Fallback to in-memory storage
+        user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      }
+    } else {
+      user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    }
+
     if (!user) {
       return res.status(401).json({
         error: 'Invalid credentials',
@@ -132,8 +203,10 @@ export const loginUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Update last login
-    user.updatedAt = new Date();
+    // Update last login (for in-memory users)
+    if (!useSharePoint) {
+      user.updatedAt = new Date();
+    }
 
     // Generate token
     const token = generateToken(user);

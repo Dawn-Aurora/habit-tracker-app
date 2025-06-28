@@ -9,6 +9,15 @@ function HabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote, onView
     return new Date(dateStr).toLocaleDateString();
   };
 
+  // Helper function to format frequency for display
+  const formatFrequency = (expectedFrequency) => {
+    if (typeof expectedFrequency === 'object' && expectedFrequency !== null) {
+      const { count, period } = expectedFrequency;
+      return `${count} time${count > 1 ? 's' : ''} per ${period}`;
+    }
+    return expectedFrequency || '';
+  };
+
   const getRecentCompletions = (completedDates) => {
     if (!completedDates || completedDates.length === 0) return [];
     return completedDates.slice(-3).reverse(); // Show last 3 completions
@@ -31,7 +40,7 @@ function HabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote, onView
             <span style={{ fontWeight: 'bold', fontSize: '1.1em' }}>{habit.name}</span>
             {habit.expectedFrequency && (
               <span style={{ color: '#888', fontSize: '0.9em' }}>
-                ({habit.expectedFrequency})
+                ({formatFrequency(habit.expectedFrequency)})
               </span>
             )}
           </div>
