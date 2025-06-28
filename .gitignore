@@ -61,3 +61,9 @@ deployment-guide.md
 remaining-tasks.txt
 Clue.txt
 test-output.txt
+
+# Private development/session files
+NEXT-SESSION-ROADMAP.md
+PROJECT-DOCUMENTATION.md
+SESSION-*-*.md
+TECHNICAL-REFERENCE.md
