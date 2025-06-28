@@ -1,5 +1,54 @@
 # Habit Tracker App
 
+## 🚀 Features
+
+- **Habit Management**: Create, edit, and delete habits with customizable frequencies
+- **Progress Tracking**: Mark habits as complete and track your streaks
+- **Analytics Dashboard**: Visualize your progress with completion rates and statistics
+- **Enhanced UI Components**: Modern, responsive interface with intuitive controls
+- **RESTful API**: Well-documented backend API with comprehensive testing
+- **Frequency System**: Set habits for daily, weekly, monthly, or yearly goals
+
+## 🏗️ Project Structure (Monorepo)
+
+```
+habit-tracker-app/
+├── backend/                 # Node.js/TypeScript backend
+│   ├── src/
+│   │   ├── controllers/     # API controllers
+│   │   ├── models/         # Data models
+│   │   ├── routes/         # API routes
+│   │   ├── middleware/     # Express middleware
+│   │   ├── utils/          # Utility functions
+│   │   ├── types/          # TypeScript type definitions
+│   │   └── __tests__/      # Backend tests
+│   └── dist/               # Compiled JavaScript
+├── habit-tracker-frontend/ # React frontend
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── api.js          # API client
+│   │   └── App.js          # Main app component
+│   ├── public/             # Static assets
+│   └── build/              # Production build
+├── docs/                   # Documentation
+├── scripts/                # Build and deployment scripts
+└── README.md               # This file
+```
+
+## 🛠️ Technology Stack
+
+### Backend
+- **Node.js** with **TypeScript**
+- **Express.js** for API server
+- **Jest** for testing
+- **SharePoint integration** (configured)
+
+### Frontend
+- **React** with modern hooks
+- **Responsive CSS** design
+- **Axios** for API communication
+- **Jest** for testing
+
 ## 🚀 Quick Start
 
 ### ⚠️ IMPORTANT: Windows PowerShell Users
@@ -40,32 +89,51 @@ The Habit Tracker App is a web application designed to help users track their ha
 - Mock data fallback for local development or SharePoint outages
 
 ## Technologies Used
-- TypeScript
-- Express.js
-- Node.js
-- Microsoft Graph API (SharePoint integration)
+- **Backend**: TypeScript, Express.js, Node.js
+- **Frontend**: React, Modern CSS, Axios
+- **Testing**: Jest for both backend and frontend
+- **Integration**: Microsoft Graph API (SharePoint)
+- **Architecture**: Full-stack monorepo structure
 
-## Project Structure
+## Project Structure (Updated)
+The project is organized as a monorepo with clear separation between backend and frontend:
+
 ```
-habit-tracker-app
-├── src
-│   ├── app.ts                # Express app configuration and middleware
-│   ├── server.ts             # Main entry point - starts the HTTP server
-│   ├── components
-│   │   └── HabitList.ts      # Manages the display and interaction of habits
-│   ├── models
-│   │   └── Habit.ts          # Represents a habit
-│   ├── routes
-│   │   └── habitRoutes.ts    # Defines routes related to habits
-│   ├── controllers
-│   │   └── habitController.ts # Manages the logic for handling habits
-│   ├── mockDataClient.ts     # In-memory mock data for development/testing
-│   ├── sharepointClient.ts   # Handles SharePoint integration
-│   └── types
-│       └── index.ts          # Defines interfaces for habit objects
-├── package.json               # npm configuration file
-├── tsconfig.json              # TypeScript configuration file
-└── README.md                  # Project documentation
+habit-tracker-app/
+├── backend/                 # Backend application
+│   ├── src/
+│   │   ├── app.ts          # Express app configuration and middleware
+│   │   ├── server.ts       # Main entry point - starts the HTTP server
+│   │   ├── components/
+│   │   │   └── HabitList.ts # Manages the display and interaction of habits
+│   │   ├── models/
+│   │   │   └── Habit.ts    # Represents a habit
+│   │   ├── routes/
+│   │   │   └── habitRoutes.ts # Defines routes related to habits
+│   │   ├── controllers/
+│   │   │   └── habitController.ts # Manages the logic for handling habits
+│   │   ├── middleware/     # Express middleware
+│   │   ├── utils/          # Utility functions
+│   │   ├── mockDataClient.ts # In-memory mock data for development/testing
+│   │   ├── sharepointClient.ts # Handles SharePoint integration
+│   │   ├── types/
+│   │   │   └── index.ts    # Defines interfaces for habit objects
+│   │   └── __tests__/      # Backend test files
+│   └── dist/               # Compiled JavaScript output
+├── habit-tracker-frontend/ # Frontend React application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   │   ├── EnhancedAddHabitForm.js
+│   │   │   ├── EnhancedHabitList.js
+│   │   │   ├── AnalyticsDashboard.js
+│   │   │   └── ... (other components)
+│   │   ├── api.js          # API client for backend communication
+│   │   └── App.js          # Main app component
+│   ├── public/             # Static assets
+│   └── build/              # Production build output
+├── package.json            # Root package.json
+├── tsconfig.json           # TypeScript configuration
+└── README.md               # Project documentation
 ```
 
 ## Environment Variables & Configuration
