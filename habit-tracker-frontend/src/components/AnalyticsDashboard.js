@@ -29,7 +29,7 @@ ChartJS.register(
 );
 
 // Helper function to categorize habits
-const getHabitCategory = (habitName) => {
+export const getHabitCategory = (habitName) => {
   const name = habitName.toLowerCase();
   if (name.includes('exercise') || name.includes('workout') || name.includes('run') || name.includes('gym')) return 'Fitness';
   if (name.includes('read') || name.includes('book') || name.includes('study') || name.includes('learn')) return 'Learning';
@@ -40,7 +40,7 @@ const getHabitCategory = (habitName) => {
 };
 
 // Helper function to parse expected frequency
-const parseExpectedFrequency = (frequency) => {
+export const parseExpectedFrequency = (frequency) => {
   if (!frequency) return { timesPerPeriod: 1, periodDays: 1 }; // Default to daily
   
   // Handle structured frequency object
@@ -82,6 +82,61 @@ const parseExpectedFrequency = (frequency) => {
 function AnalyticsDashboard({ habits, onClose }) {
   const [timeRange, setTimeRange] = useState('30'); // 7, 30, 90 days
   const [viewType, setViewType] = useState('overview'); // overview, habits, streaks
+
+  // Export functionality
+  const exportToCSV = () => {
+    const csvData = habits.map(habit => ({
+      Name: habit.name,
+      'Total Completions': habit.completedDates ? habit.completedDates.length : 0,
+      'Expected Frequency': typeof habit.expectedFrequency === 'object' 
+        ? `${habit.expectedFrequency.count} times per ${habit.expectedFrequency.period}`
+        : habit.expectedFrequency || 'Daily',
+      Tags: Array.isArray(habit.tags) ? habit.tags.join(', ') : '',
+      'Creation Date': habit.startDate || 'Unknown',
+      'Last Completion': habit.completedDates && habit.completedDates.length > 0 
+        ? habit.completedDates[habit.completedDates.length - 1] 
+        : 'Never'
+    }));
+
+    const headers = Object.keys(csvData[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `habit-tracker-data-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportToJSON = () => {
+    const jsonData = {
+      exportDate: new Date().toISOString(),
+      totalHabits: habits.length,
+      habits: habits.map(habit => ({
+        id: habit.id,
+        name: habit.name,
+        expectedFrequency: habit.expectedFrequency,
+        completedDates: habit.completedDates || [],
+        tags: habit.tags || [],
+        notes: habit.notes || [],
+        startDate: habit.startDate,
+        userId: habit.userId
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `habit-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   // Calculate analytics data
   const analytics = useMemo(() => {
@@ -210,7 +265,10 @@ function AnalyticsDashboard({ habits, onClose }) {
   };
 
   const habitComparisonData = {
-    labels: analytics.habitData.map(h => h.name.length > 15 ? h.name.substring(0, 15) + '...' : h.name),
+    labels: analytics.habitData.map(h => {
+      const name = h.name || 'Unnamed Habit';
+      return name.length > 15 ? name.substring(0, 15) + '...' : name;
+    }),
     datasets: [
       {
         label: 'Completion Rate (%)',
@@ -309,19 +367,70 @@ function AnalyticsDashboard({ habits, onClose }) {
         }}>
           <h2 style={{ margin: 0, color: '#333' }}>📊 Analytics Dashboard</h2>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <select 
-              value={timeRange} 
-              onChange={(e) => setTimeRange(e.target.value)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <select 
+                value={timeRange} 
+                onChange={(e) => setTimeRange(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #ddd'
+                }}
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+              <div 
+                title="📊 How Analytics Work:
+• Habits Tab: Shows completion count, rate vs expected frequency, and streaks for each habit
+• Streaks Tab: Shows consecutive days with any habit completion
+• Completion Rate: (Actual completions / Expected completions) × 100%
+• Expected completions calculated based on habit frequency and time period
+• Streaks allow up to 2-day gaps for flexibility"
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  backgroundColor: '#4caf50',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'help',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}
+              >
+                ?
+              </div>
+            </div>
+            <button 
+              onClick={exportToCSV}
               style={{
-                padding: '8px 12px',
+                padding: '8px 16px',
+                backgroundColor: '#4caf50',
+                color: 'white',
+                border: 'none',
                 borderRadius: '6px',
-                border: '1px solid #ddd'
+                cursor: 'pointer'
               }}
             >
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-            </select>
+              📊 Export CSV
+            </button>
+            <button 
+              onClick={exportToJSON}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#2196f3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              💾 Export JSON
+            </button>
             <button 
               onClick={onClose}
               style={{
@@ -400,7 +509,7 @@ function AnalyticsDashboard({ habits, onClose }) {
           display: 'flex',
           gap: '8px'
         }}>
-          {['overview', 'habits', 'categories'].map(type => (
+          {['overview', 'habits', 'streaks', 'categories'].map(type => (
             <button
               key={type}
               onClick={() => setViewType(type)}
@@ -501,6 +610,22 @@ function AnalyticsDashboard({ habits, onClose }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {viewType === 'streaks' && (
+          <div>
+            <h3 style={{ marginBottom: '16px' }}>🏅 Current Streaks</h3>
+            <div style={{ padding: '12px' }}>
+              {analytics.habitData.map((h, idx) => (
+                <div key={idx} style={{ marginBottom: '8px' }}>
+                  {h.name || 'Unnamed Habit'}: {h.currentStreak}
+                </div>
+              ))}
+              {analytics.habitData.length === 0 && (
+                <div style={{ color: '#666' }}>No habits to display streaks.</div>
+              )}
             </div>
           </div>
         )}

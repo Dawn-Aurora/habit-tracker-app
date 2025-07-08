@@ -5,11 +5,12 @@ module.exports = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/types/**',
+    'backend/src/**/*.ts',
+    '!backend/src/__tests__/**',
+    '!backend/src/types/**',
     '!**/node_modules/**'
   ],
-  coverageReporters: ['text', 'lcov'],
+  coverageReporters: ['text', 'lcov', 'html'],
   testPathIgnorePatterns: ['/node_modules/'],
   // Add this to help Jest detect open handles
   detectOpenHandles: true,

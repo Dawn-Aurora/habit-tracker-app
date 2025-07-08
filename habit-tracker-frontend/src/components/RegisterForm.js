@@ -3,15 +3,14 @@ import api from '../api';
 
 function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
   const [formData, setFormData] = useState({
-    email: '',
     firstName: '',
     lastName: '',
+    email: '',
     password: '',
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -20,95 +19,63 @@ function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
     });
   };
 
-  const validateForm = () => {
-    const { email, firstName, lastName, password, confirmPassword } = formData;
-
-    // Check all fields are filled
-    if (!email || !firstName || !lastName || !password || !confirmPassword) {
-      return 'Please fill in all fields';
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
-    }
-
-    // Name validation
-    if (firstName.trim().length < 2) {
-      return 'First name must be at least 2 characters';
-    }
-    if (lastName.trim().length < 2) {
-      return 'Last name must be at least 2 characters';
-    }
-
-    // Password validation
-    if (password.length < 6) {
-      return 'Password must be at least 6 characters';
-    }
-
-    // Password confirmation
-    if (password !== confirmPassword) {
-      return 'Passwords do not match';
-    }
-
-    return null;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess('');
 
-    // Validate form
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+    // Basic validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    // Password validation
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
     try {
-      const registrationData = {
-        email: formData.email.trim(),
+      const response = await api.post('/auth/register', {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
         password: formData.password
-      };
+      });
 
-      const response = await api.post('/auth/register', registrationData);
-
-      if (response.data && response.data.message) {
-        setSuccess('Registration successful! You can now login with your credentials.');
+      if (response.data && response.data.token) {
+        // Store token in localStorage
+        localStorage.setItem('authToken', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
         
-        // Clear form
-        setFormData({
-          email: '',
-          firstName: '',
-          lastName: '',
-          password: '',
-          confirmPassword: ''
-        });
-
-        // Automatically switch to login after 2 seconds
-        setTimeout(() => {
-          onSwitchToLogin();
-        }, 2000);
-
-        // Call success callback if provided
-        if (onRegisterSuccess) {
-          onRegisterSuccess(response.data);
-        }
+        // Call success callback with user data
+        onRegisterSuccess(response.data.user, response.data.token);
       } else {
-        setError('Registration failed. Please try again.');
+        setError('Invalid response from server');
       }
     } catch (err) {
       console.error('Registration error:', err);
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
-      } else if (err.response && err.response.status === 409) {
-        setError('An account with this email already exists');
+      } else if (err.response && err.response.status === 400) {
+        setError('Registration failed. Please check your details.');
       } else if (err.code === 'ERR_NETWORK') {
         setError('Cannot connect to server. Please try again later.');
       } else {
@@ -120,229 +87,122 @@ function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
   };
 
   return (
-    <div style={{
-      maxWidth: '400px',
-      margin: '20px auto',
-      padding: '30px',
-      border: '1px solid #ddd',
-      borderRadius: '8px',
-      backgroundColor: '#f9f9f9',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-    }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>
-        Register for Habit Tracker
-      </h2>
+    <div className="auth-form-container">
+      <div className="auth-form-header">
+        <h2>✨ Create Account</h2>
+        <p>Join us and start tracking your habits today</p>
+      </div>
       
       {error && (
-        <div style={{
-          backgroundColor: '#ffebee',
-          color: '#c62828',
-          padding: '12px',
-          borderRadius: '4px',
-          marginBottom: '20px',
-          border: '1px solid #ffcdd2'
-        }}>
-          {error}
+        <div className="error-message">
+          <span className="error-icon">⚠️</span>
+          <span>{error}</span>
         </div>
       )}
-
-      {success && (
-        <div style={{
-          backgroundColor: '#e8f5e8',
-          color: '#2e7d32',
-          padding: '12px',
-          borderRadius: '4px',
-          marginBottom: '20px',
-          border: '1px solid #a5d6a7'
-        }}>
-          {success}
+      
+      <form onSubmit={handleSubmit} className="auth-form">
+        <div className="form-group">
+          <label htmlFor="firstName" className="form-label">👤 First Name</label>
+          <input
+            type="text"
+            id="firstName"
+            name="firstName"
+            className="form-input"
+            value={formData.firstName}
+            onChange={handleChange}
+            placeholder="Enter your first name"
+            disabled={loading}
+            required
+          />
         </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '8px', 
-            fontWeight: 'bold',
-            color: '#555'
-          }}>
-            Email Address:
-          </label>
+        
+        <div className="form-group">
+          <label htmlFor="lastName" className="form-label">👤 Last Name</label>
+          <input
+            type="text"
+            id="lastName"
+            name="lastName"
+            className="form-input"
+            value={formData.lastName}
+            onChange={handleChange}
+            placeholder="Enter your last name"
+            disabled={loading}
+            required
+          />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="email" className="form-label">📧 Email Address</label>
           <input
             type="email"
+            id="email"
             name="email"
+            className="form-input"
             value={formData.email}
             onChange={handleChange}
             placeholder="Enter your email"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '16px',
-              boxSizing: 'border-box'
-            }}
             required
           />
         </div>
-
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontWeight: 'bold',
-              color: '#555'
-            }}>
-              First Name:
-            </label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              placeholder="First name"
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-                boxSizing: 'border-box'
-              }}
-              required
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontWeight: 'bold',
-              color: '#555'
-            }}>
-              Last Name:
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              placeholder="Last name"
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-                boxSizing: 'border-box'
-              }}
-              required
-            />
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '8px', 
-            fontWeight: 'bold',
-            color: '#555'
-          }}>
-            Password:
-          </label>
+        
+        <div className="form-group">
+          <label htmlFor="password" className="form-label">🔒 Password</label>
           <input
             type="password"
+            id="password"
             name="password"
+            className="form-input"
             value={formData.password}
             onChange={handleChange}
-            placeholder="Enter password (min 6 characters)"
+            placeholder="Enter your password (min 6 characters)"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '16px',
-              boxSizing: 'border-box'
-            }}
             required
           />
         </div>
-
-        <div style={{ marginBottom: '25px' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '8px', 
-            fontWeight: 'bold',
-            color: '#555'
-          }}>
-            Confirm Password:
-          </label>
+        
+        <div className="form-group">
+          <label htmlFor="confirmPassword" className="form-label">🔒 Confirm Password</label>
           <input
             type="password"
+            id="confirmPassword"
             name="confirmPassword"
+            className="form-input"
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Confirm your password"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '16px',
-              boxSizing: 'border-box'
-            }}
             required
           />
         </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '14px',
-            backgroundColor: loading ? '#ccc' : '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'background-color 0.3s'
-          }}
+        
+        <button 
+          type="submit" 
+          disabled={loading} 
+          className={`btn btn-primary ${loading ? 'btn-loading' : ''}`}
         >
-          {loading ? 'Registering...' : 'Register'}
+          {loading ? (
+            <>
+              <span>⏳</span>
+              <span>Creating account...</span>
+            </>
+          ) : (
+            <>
+              <span>🚀</span>
+              <span>Create Account</span>
+            </>
+          )}
         </button>
       </form>
-
-      <div style={{ 
-        textAlign: 'center', 
-        marginTop: '25px',
-        paddingTop: '20px',
-        borderTop: '1px solid #eee'
-      }}>
-        <p style={{ color: '#666', margin: '0 0 10px 0' }}>
-          Already have an account?
-        </p>
-        <button
-          onClick={onSwitchToLogin}
-          disabled={loading}
-          style={{
-            backgroundColor: 'transparent',
-            color: '#007bff',
-            border: 'none',
-            textDecoration: 'underline',
-            cursor: 'pointer',
-            fontSize: '16px'
-          }}
+      
+      <div className="auth-switch">
+        <p>Already have an account?</p>
+        <button 
+          type="button" 
+          onClick={onSwitchToLogin} 
+          className="auth-link"
         >
-          Login here
+          🔐 Login Here
         </button>
       </div>
     </div>

@@ -1,123 +1,105 @@
 import React, { useState } from 'react';
-import api from '../api';
 
-function EditHabitForm({ habit, onHabitUpdated }) {
-  const [name, setName] = useState(habit.name);
-  
-  // Helper function to format frequency for editing
-  const formatFrequencyForEdit = (expectedFrequency) => {
-    if (typeof expectedFrequency === 'object' && expectedFrequency !== null) {
-      const { count, period } = expectedFrequency;
-      return `${count} time${count > 1 ? 's' : ''} per ${period}`;
-    }
-    return expectedFrequency || '';
-  };
-  
-  const [expectedFrequency, setExpectedFrequency] = useState(formatFrequencyForEdit(habit.expectedFrequency));
-  const [tags, setTags] = useState((habit.tags || []).join(', '));
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
+function EditHabitForm({ habit, onEditHabit, onCancel }) {
+  const [formData, setFormData] = useState({
+    name: habit.name || '',
+    description: habit.description || '',
+    frequency: habit.frequency || 'daily',
+    category: habit.category || 'health'
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError('Habit name is required');
-      return;
+    if (formData.name.trim()) {
+      onEditHabit(habit.id, formData);
     }
-    
-    setLoading(true);
-    setError('');
-    
-    const tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
-    
-    api.put(`/habits/${habit.id}`, { 
-      name: name.trim(),
-      expectedFrequency,
-      tags: tagsArray
-    })
-      .then(res => {
-        setLoading(false);
-        if (onHabitUpdated) onHabitUpdated();
-      })
-      .catch(err => {
-        console.error('Error updating habit:', err);
-        setLoading(false);
-        setError('Error updating habit: ' + (err.response?.data?.message || err.message));
-      });
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      top: '50%', 
-      left: '50%', 
-      transform: 'translate(-50%, -50%)',
-      backgroundColor: 'white',
-      padding: '24px',
-      border: '2px solid #ddd',
-      borderRadius: '8px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      zIndex: 1000,
-      minWidth: '400px'
-    }}>
-      <h3 style={{ marginTop: 0 }}>Edit Habit</h3>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>        <div>
-          <label htmlFor="edit-habit-name" style={{ display: 'block', marginBottom: '4px' }}>Habit Name *</label>
+    <div className="modal-form">
+      <div className="modal-header">
+        <h3>Edit Habit</h3>
+        <button type="button" className="btn-close" onClick={onCancel}>
+          ×
+        </button>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="habit-form">
+        <div className="form-group">
+          <label htmlFor="edit-habit-name" className="form-label">Habit Name *</label>
           <input
             id="edit-habit-name"
-            value={name}
-            onChange={e => setName(e.target.value)}
+            name="name"
+            type="text"
+            className="form-input"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="e.g., Exercise, Read, Meditate"
             required
-            style={{ width: '100%', padding: '8px' }}
           />
         </div>
         
-        <div>
-          <label htmlFor="edit-expected-frequency" style={{ display: 'block', marginBottom: '4px' }}>Expected Frequency</label>
-          <input
-            id="edit-expected-frequency"
-            value={expectedFrequency}
-            onChange={e => setExpectedFrequency(e.target.value)}
-            placeholder="e.g., Daily, 3 times/week, Once/month"
-            style={{ width: '100%', padding: '8px' }}
+        <div className="form-group">
+          <label htmlFor="edit-habit-description" className="form-label">Description</label>
+          <textarea
+            id="edit-habit-description"
+            name="description"
+            className="form-textarea"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="Describe your habit..."
+            rows="3"
           />
         </div>
         
-        <div>
-          <label htmlFor="edit-tags" style={{ display: 'block', marginBottom: '4px' }}>Tags (comma-separated)</label>
-          <input
-            id="edit-tags"
-            value={tags}
-            onChange={e => setTags(e.target.value)}
-            placeholder="e.g., health, fitness, personal"
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </div>
-        
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-          <button 
-            type="button" 
-            onClick={() => onHabitUpdated && onHabitUpdated()}
-            style={{ padding: '8px 16px' }}
+        <div className="form-group">
+          <label htmlFor="edit-habit-frequency" className="form-label">Frequency</label>
+          <select
+            id="edit-habit-frequency"
+            name="frequency"
+            className="form-select"
+            value={formData.frequency}
+            onChange={handleChange}
           >
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="edit-habit-category" className="form-label">Category</label>
+          <select
+            id="edit-habit-category"
+            name="category"
+            className="form-select"
+            value={formData.category}
+            onChange={handleChange}
+          >
+            <option value="health">Health</option>
+            <option value="fitness">Fitness</option>
+            <option value="productivity">Productivity</option>
+            <option value="learning">Learning</option>
+            <option value="social">Social</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        
+        <div className="form-actions">
+          <button type="button" className="btn btn-secondary" onClick={onCancel}>
             Cancel
           </button>
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={{ 
-              padding: '8px 16px', 
-              backgroundColor: '#2196f3', 
-              color: 'white', 
-              border: 'none',
-              borderRadius: '4px'
-            }}
-          >
-            {loading ? 'Updating...' : 'Update Habit'}
+          <button type="submit" className="btn btn-primary">
+            Update Habit
           </button>
         </div>
-        
-        {error && <div style={{ color: 'red', fontSize: '0.9em' }}>{error}</div>}
       </form>
     </div>
   );

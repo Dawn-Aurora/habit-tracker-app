@@ -198,13 +198,20 @@ function CompletionCounter({ habit, date = new Date().toISOString().slice(0, 10)
       </div>
       
       {targetCount > 1 && (
-        <div style={{ 
-          width: '100%', 
-          height: '4px', 
-          backgroundColor: '#e0e0e0', 
-          borderRadius: '2px',
-          overflow: 'hidden'
-        }}>
+        <div 
+          role="progressbar"
+          aria-valuenow={count}
+          aria-valuemin={0}
+          aria-valuemax={targetCount}
+          aria-label={`Progress: ${count} of ${targetCount} completions`}
+          style={{ 
+            width: '100%', 
+            height: '4px', 
+            backgroundColor: '#e0e0e0', 
+            borderRadius: '2px',
+            overflow: 'hidden'
+          }}
+        >
           <div style={{
             width: `${progressPercentage}%`,
             height: '100%',

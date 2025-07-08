@@ -1,9 +1,12 @@
 services:
   - type: web
-    name: habit-tracker-api
-    env: node
-    buildCommand: npm install && npm run build
-    startCommand: node dist/server.js
+    name: habit-tracker-fullstack
+    env: node  
+    region: oregon
+    plan: free
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -11,4 +14,22 @@ services:
         value: 10000
       - key: NODE_VERSION
         value: 20.11.1
-# Add your SharePoint or other secrets as additional envVars if needed
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: USE_MOCK_DATA
+        value: false
+      # SharePoint Configuration (set these in Render dashboard)
+      # - key: SHAREPOINT_SITE_ID
+      #   sync: false
+      # - key: SHAREPOINT_HABITS_LIST_ID  
+      #   sync: false
+      # - key: SHAREPOINT_USERS_LIST_ID
+      #   sync: false
+      # - key: MICROSOFT_TENANT_ID
+      #   sync: false
+      # - key: MICROSOFT_CLIENT_ID
+      #   sync: false
+      # - key: MICROSOFT_CLIENT_SECRET
+      #   sync: false

@@ -75,4 +75,48 @@ describe('AddHabitForm Component', () => {  beforeEach(() => {
       }));
     });
   });
+
+  // ================== COVERAGE IMPROVEMENT TESTS ==================
+
+  it('handles start date input changes', () => {
+    render(<AddHabitForm onHabitAdded={jest.fn()} />);
+    
+    const startDateInput = screen.getByLabelText(/start date/i);
+    fireEvent.change(startDateInput, { target: { value: '2023-12-25' } });
+    
+    // Should update the start date value
+    expect(startDateInput.value).toBe('2023-12-25');
+  });
+
+  it('handles API errors during habit addition', async () => {
+    api.post.mockRejectedValue({
+      response: { data: { message: 'Habit name already exists' } }
+    });
+    
+    render(<AddHabitForm onHabitAdded={jest.fn()} />);
+    
+    const nameInput = screen.getByLabelText(/habit name/i);
+    fireEvent.change(nameInput, { target: { value: 'Existing Habit' } });
+    fireEvent.click(screen.getByRole('button', { name: /add habit/i }));
+    
+    // Should display error message
+    await waitFor(() => {
+      expect(screen.getByText(/error adding habit.*habit name already exists/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles network errors during habit addition', async () => {
+    api.post.mockRejectedValue(new Error('Network error'));
+    
+    render(<AddHabitForm onHabitAdded={jest.fn()} />);
+    
+    const nameInput = screen.getByLabelText(/habit name/i);
+    fireEvent.change(nameInput, { target: { value: 'Test Habit' } });
+    fireEvent.click(screen.getByRole('button', { name: /add habit/i }));
+    
+    // Should display generic error message
+    await waitFor(() => {
+      expect(screen.getByText(/error adding habit.*network error/i)).toBeInTheDocument();
+    });
+  });
 });

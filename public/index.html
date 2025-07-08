@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker - Build Better Habits</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+
+        <!-- Authentication Section -->
+        <div id="auth-section" class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1><i class="fas fa-chart-line"></i> Habit Tracker</h1>
+                    <p>Build better habits, one day at a time</p>
+                </div>
+
+                <!-- Login Form -->
+                <div id="login-form" class="auth-form">
+                    <h2>Welcome Back</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginEmail">Email</label>
+                            <input type="email" id="loginEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Sign In
+                        </button>
+                    </form>
+                    <p class="auth-switch">
+                        Don't have an account? 
+                        <a href="#" id="switch-to-register">Sign up</a>
+                    </p>
+                </div>
+
+                <!-- Register Form -->
+                <div id="register-form" class="auth-form hidden">
+                    <h2>Create Account</h2>
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="registerName">Full Name</label>
+                            <input type="text" id="registerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerEmail">Email</label>
+                            <input type="email" id="registerEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">Password</label>
+                            <input type="password" id="registerPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerConfirmPassword">Confirm Password</label>
+                            <input type="password" id="registerConfirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Sign Up
+                        </button>
+                    </form>
+                    <p class="auth-switch">
+                        Already have an account? 
+                        <a href="#" id="switch-to-login">Sign in</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Application -->
+        <div id="main-app" class="main-container hidden">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <i class="fas fa-chart-line"></i>
+                        <h1>Habit Tracker</h1>
+                    </div>
+                    <div class="user-menu">
+                        <span id="user-name">Welcome, User!</span>
+                        <button id="logout-btn" class="btn btn-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Stats Dashboard -->
+                <section class="stats-section">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="total-habits">0</h3>
+                                <p>Total Habits</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="current-streak">0</h3>
+                                <p>Current Streak</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="completed-today">0</h3>
+                                <p>Completed Today</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="success-rate">0%</h3>
+                                <p>Success Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add Habit Section -->
+                <section class="add-habit-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-plus-circle"></i> Add New Habit</h2>
+                        <button id="toggle-add-form" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Habit
+                        </button>
+                    </div>
+                    
+                    <div id="add-habit-form" class="form-container hidden">
+                        <form id="habitForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="habitName">Habit Name</label>
+                                    <input type="text" id="habitName" required placeholder="e.g., Exercise, Read, Meditate">
+                                </div>
+                                <div class="form-group">
+                                    <label for="habitDescription">Description</label>
+                                    <input type="text" id="habitDescription" placeholder="Optional description">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="habitFrequency">Frequency</label>
+                                    <select id="habitFrequency" required>
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="habitCategory">Category</label>
+                                    <select id="habitCategory">
+                                        <option value="health">Health</option>
+                                        <option value="fitness">Fitness</option>
+                                        <option value="productivity">Productivity</option>
+                                        <option value="learning">Learning</option>
+                                        <option value="mindfulness">Mindfulness</option>
+                                        <option value="social">Social</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="cancel-add" class="btn btn-secondary">Cancel</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Habit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Habits List -->
+                <section class="habits-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-list"></i> Your Habits</h2>
+                        <div class="filter-controls">
+                            <select id="filter-category">
+                                <option value="">All Categories</option>
+                                <option value="health">Health</option>
+                                <option value="fitness">Fitness</option>
+                                <option value="productivity">Productivity</option>
+                                <option value="learning">Learning</option>
+                                <option value="mindfulness">Mindfulness</option>
+                                <option value="social">Social</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <select id="filter-frequency">
+                                <option value="">All Frequencies</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="habits-container" class="habits-grid">
+                        <!-- Habits will be loaded here -->
+                    </div>
+                    
+                    <div id="no-habits" class="empty-state hidden">
+                        <i class="fas fa-seedling"></i>
+                        <h3>No habits yet</h3>
+                        <p>Start building better habits by adding your first one!</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Edit Habit Modal -->
+        <div id="edit-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-edit"></i> Edit Habit</h3>
+                    <button id="close-edit-modal" class="btn btn-icon">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="editHabitForm">
+                    <div class="form-group">
+                        <label for="editHabitName">Habit Name</label>
+                        <input type="text" id="editHabitName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editHabitDescription">Description</label>
+                        <input type="text" id="editHabitDescription">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editHabitFrequency">Frequency</label>
+                            <select id="editHabitFrequency" required>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editHabitCategory">Category</label>
+                            <select id="editHabitCategory">
+                                <option value="health">Health</option>
+                                <option value="fitness">Fitness</option>
+                                <option value="productivity">Productivity</option>
+                                <option value="learning">Learning</option>
+                                <option value="mindfulness">Mindfulness</option>
+                                <option value="social">Social</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="cancel-edit" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alert-container" class="alert-container"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -152,8 +152,6 @@ class Habit {
         const today = new Date();
         const { monday, sunday } = this.getWeekRange(today);
         
-        console.log('DEBUG: This week range:', monday.toISOString().slice(0, 10), 'to', sunday.toISOString().slice(0, 10));
-        
         // Count completions in this week
         const thisWeekCompletions = this.completions.filter(dateStr => {
             const completionDate = new Date(dateStr);
@@ -166,14 +164,10 @@ class Habit {
             7
         );
         
-        console.log('DEBUG: This week completions:', thisWeekCompletions);
-        console.log('DEBUG: Days elapsed this week:', daysElapsedThisWeek);
-        
         if (daysElapsedThisWeek === 0) return 0;
         
         // Return as decimal (0.0 to 1.0) so frontend can display as percentage
         const rate = thisWeekCompletions / daysElapsedThisWeek;
-        console.log('DEBUG: This week completion rate (decimal):', rate);
         return rate;
     }
 

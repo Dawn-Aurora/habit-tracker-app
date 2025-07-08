@@ -73,4 +73,70 @@ describe('EditHabitForm Component', () => {
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(onHabitUpdated).toHaveBeenCalled();
   });
+
+  // ================== COVERAGE IMPROVEMENT TESTS ==================
+
+  it('formats object frequency for edit display', () => {
+    const habitWithObjectFreq = {
+      ...habit,
+      expectedFrequency: { count: 3, period: 'week' }
+    };
+    render(<EditHabitForm habit={habitWithObjectFreq} onHabitUpdated={jest.fn()} />);
+    
+    // Should display formatted frequency
+    expect(screen.getByDisplayValue('3 times per week')).toBeInTheDocument();
+  });
+
+  it('formats singular frequency for edit display', () => {
+    const habitWithSingularFreq = {
+      ...habit,
+      expectedFrequency: { count: 1, period: 'day' }
+    };
+    render(<EditHabitForm habit={habitWithSingularFreq} onHabitUpdated={jest.fn()} />);
+    
+    // Should display formatted frequency with singular "time"
+    expect(screen.getByDisplayValue('1 time per day')).toBeInTheDocument();
+  });
+
+  it('handles tags input changes', () => {
+    render(<EditHabitForm habit={habit} onHabitUpdated={jest.fn()} />);
+    
+    const tagsInput = screen.getByDisplayValue('learning, personal');
+    fireEvent.change(tagsInput, { target: { value: 'health, fitness, reading' } });
+    
+    // Should update the tags value
+    expect(screen.getByDisplayValue('health, fitness, reading')).toBeInTheDocument();
+  });
+
+  it('handles API errors during update', async () => {
+    api.put.mockRejectedValue({
+      response: { data: { message: 'Habit name already exists' } }
+    });
+    
+    render(<EditHabitForm habit={habit} onHabitUpdated={jest.fn()} />);
+    
+    const nameInput = screen.getByDisplayValue('Read');
+    fireEvent.change(nameInput, { target: { value: 'Updated Name' } });
+    fireEvent.click(screen.getByRole('button', { name: /update habit/i }));
+    
+    // Should display error message
+    await waitFor(() => {
+      expect(screen.getByText(/error updating habit.*habit name already exists/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles network errors during update', async () => {
+    api.put.mockRejectedValue(new Error('Network error'));
+    
+    render(<EditHabitForm habit={habit} onHabitUpdated={jest.fn()} />);
+    
+    const nameInput = screen.getByDisplayValue('Read');
+    fireEvent.change(nameInput, { target: { value: 'Updated Name' } });
+    fireEvent.click(screen.getByRole('button', { name: /update habit/i }));
+    
+    // Should display generic error message
+    await waitFor(() => {
+      expect(screen.getByText(/error updating habit.*network error/i)).toBeInTheDocument();
+    });
+  });
 });

@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "name": "habit-tracker-frontend",
+  "builds": [
+    {
+      "src": "habit-tracker-frontend/package.json",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["habit-tracker-frontend/build/**"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://your-backend-url.onrender.com/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/habit-tracker-frontend/build/index.html"
+    }
+  ],
+  "functions": {
+    "habit-tracker-frontend/build/static/js/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "REACT_APP_API_URL": "https://your-backend-url.onrender.com/api"
+  }
+}

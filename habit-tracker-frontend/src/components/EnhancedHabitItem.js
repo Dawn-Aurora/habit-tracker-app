@@ -11,6 +11,25 @@ function EnhancedHabitItem({
 }) {
   const [showDetails, setShowDetails] = useState(false);
 
+  // Calculate today's completions for better progress display
+  const getTodayProgress = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCompletions = habit.completedDates?.filter(date => 
+      date.slice(0, 10) === today
+    ).length || 0;
+    
+    // Get target from expectedFrequency
+    let target = null;
+    if (typeof habit.expectedFrequency === 'object' && habit.expectedFrequency !== null) {
+      const { count, period } = habit.expectedFrequency;
+      if (period === 'day') {
+        target = count;
+      }
+    }
+    
+    return { current: todayCompletions, target };
+  };
+
   // Calculate weekly progress for weekly/monthly habits
   const getWeeklyProgress = () => {
     // Check both expectedFrequency (unified) and desiredFrequency (legacy)
@@ -77,219 +96,328 @@ function EnhancedHabitItem({
     return habit.expectedFrequency || habit.frequency || 'No frequency set';
   };
 
+  const todayProgress = getTodayProgress();
   const weeklyProgress = getWeeklyProgress();
 
   return (
-    <div style={{
-      border: '1px solid #e0e0e0',
-      borderRadius: '12px',
-      padding: '16px',
-      margin: '8px 0',
-      backgroundColor: 'white',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      transition: 'all 0.2s ease'
+    <div className="modern-card modern-fade-in" style={{
+      transition: 'all 0.3s ease',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start',
-        marginBottom: '12px'
-      }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ 
-            margin: '0 0 4px 0', 
-            fontSize: '18px',
-            color: '#333',
-            fontWeight: '600'
-          }}>
-            {habit.name}
-          </h3>
-          
-          <div style={{ 
-            fontSize: '13px', 
-            color: '#666',
-            marginBottom: '8px'
-          }}>
-            {formatFrequency()}
-          </div>
-          
-          {habit.tags && habit.tags.length > 0 && (
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {habit.tags.map((tag, index) => (
-                <span key={index} style={{
-                  fontSize: '11px',
-                  padding: '2px 6px',
-                  backgroundColor: '#e3f2fd',
-                  color: '#1976d2',
-                  borderRadius: '10px',
-                  fontWeight: '500'
-                }}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginLeft: '16px' }}>
-          {/* Always show enhanced completion counter */}
-          <EnhancedCompletionCounter 
-            habit={habit}
-            onCompletionChange={onCompletionChange}
-          />
-          
-          {/* Show weekly/monthly progress for those types */}
-          {weeklyProgress && (
-            <div style={{
-              padding: '8px 12px',
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              backgroundColor: '#fafafa',
-              minWidth: '100px',
-              marginTop: '8px'
+      {/* Progress indicator stripe */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '4px',
+        background: todayProgress.target && todayProgress.current >= todayProgress.target 
+          ? 'var(--gradient-success)' 
+          : 'var(--gradient-primary)',
+        opacity: 0.8
+      }} />
+      
+      <div className="modern-card-body">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start',
+          marginBottom: 'var(--space-4)'
+        }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ 
+              margin: '0 0 var(--space-1) 0', 
+              fontSize: '1.25rem',
+              color: 'var(--gray-800)',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-2)'
             }}>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#666', 
-                marginBottom: '4px' 
-              }}>
-                {weeklyProgress.label}
-              </div>
-              <div style={{ 
-                fontSize: '18px', 
-                fontWeight: 'bold',
-                color: weeklyProgress.current >= weeklyProgress.target ? '#4caf50' : '#666'
-              }}>
-                {weeklyProgress.current} / {weeklyProgress.target}
-              </div>
-              {weeklyProgress.current >= weeklyProgress.target && (
-                <div style={{ 
-                  fontSize: '11px', 
-                  color: '#4caf50', 
-                  marginTop: '2px' 
-                }}>
-                  ✓ Complete!
-                </div>
+              <span>{habit.name}</span>
+              {todayProgress.target && todayProgress.current >= todayProgress.target && (
+                <span style={{ fontSize: '1rem' }}>✅</span>
               )}
+            </h3>
+            
+            <div style={{ 
+              fontSize: '0.875rem', 
+              color: 'var(--gray-500)',
+              marginBottom: 'var(--space-3)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-2)'
+            }}>
+              <span>📅</span>
+              <span>{formatFrequency()}</span>
             </div>
-          )}
-        </div>
-      </div>
 
-      <div style={{ 
-        display: 'flex', 
-        gap: '8px', 
-        flexWrap: 'wrap',
-        alignItems: 'center'
-      }}>
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          style={{
-            padding: '6px 12px',
-            fontSize: '12px',
-            backgroundColor: '#f5f5f5',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            color: '#666'
-          }}
-        >
-          {showDetails ? 'Hide Details' : 'Show Details'}
-        </button>
-        
-        <button
-          onClick={() => onEdit(habit)}
-          style={{
-            padding: '6px 12px',
-            fontSize: '12px',
-            backgroundColor: '#fff3e0',
-            border: '1px solid #ffcc02',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            color: '#f57c00'
-          }}
-        >
-          ✏️ Edit
-        </button>
-        
-        <button
-          onClick={() => onAddNote(habit)}
-          style={{
-            padding: '6px 12px',
-            fontSize: '12px',
-            backgroundColor: '#f3e5f5',
-            border: '1px solid #ce93d8',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            color: '#7b1fa2'
-          }}
-        >
-          📝 Note
-        </button>
-        
-        <button
-          onClick={() => onViewAnalytics && onViewAnalytics(habit)}
-          style={{
-            padding: '6px 12px',
-            fontSize: '12px',
-            backgroundColor: '#e8f5e8',
-            border: '1px solid #4caf50',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            color: '#2e7d32'
-          }}
-        >
-          📊 Analytics
-        </button>
-        
-        <button
-          onClick={() => onDelete(habit.id)}
-          style={{
-            padding: '6px 12px',
-            fontSize: '12px',
-            backgroundColor: '#ffebee',
-            border: '1px solid #ffcdd2',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            color: '#d32f2f'
-          }}
-        >
-          🗑️ Delete
-        </button>
+            {/* Today's Progress Bar for Daily Habits */}
+            {todayProgress.target && (
+              <div className="modern-card" style={{
+                marginBottom: 'var(--space-3)',
+                background: 'var(--gray-50)',
+                border: '1px solid var(--gray-200)'
+              }}>
+                <div className="modern-card-body" style={{ padding: 'var(--space-3)' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    <span style={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: '600', 
+                      color: 'var(--gray-600)' 
+                    }}>
+                      Today's Progress
+                    </span>
+                    <span className={`modern-badge ${
+                      todayProgress.current >= todayProgress.target 
+                        ? 'modern-badge-success' 
+                        : 'modern-badge-primary'
+                    }`}>
+                      {todayProgress.current}/{todayProgress.target}
+                    </span>
+                  </div>
+                  <div className="modern-progress">
+                    <div 
+                      className="modern-progress-bar"
+                      style={{
+                        width: `${Math.min((todayProgress.current / todayProgress.target) * 100, 100)}%`,
+                        background: todayProgress.current >= todayProgress.target 
+                          ? 'var(--gradient-success)' 
+                          : 'var(--gradient-primary)'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {habit.tags && habit.tags.length > 0 && (
+              <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
+                {habit.tags.map((tag, index) => (
+                  <span key={index} className="modern-badge" style={{
+                    background: 'var(--primary-color)',
+                    color: 'var(--white)',
+                    fontSize: '0.75rem'
+                  }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginLeft: 'var(--space-4)' }}>
+            {/* Always show enhanced completion counter */}
+            <EnhancedCompletionCounter 
+              habit={habit}
+              onCompletionChange={onCompletionChange}
+            />
+            
+            {/* Show weekly/monthly progress for those types */}
+            {weeklyProgress && (
+              <div className="modern-card" style={{
+                marginTop: 'var(--space-3)',
+                minWidth: '120px',
+                textAlign: 'center'
+              }}>
+                <div className="modern-card-body" style={{ padding: 'var(--space-3)' }}>
+                  <div style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'var(--gray-500)', 
+                    marginBottom: 'var(--space-1)' 
+                  }}>
+                    {weeklyProgress.label}
+                  </div>
+                  <div style={{ 
+                    fontSize: '1.25rem', 
+                    fontWeight: '700',
+                    color: weeklyProgress.current >= weeklyProgress.target 
+                      ? 'var(--success-color)' 
+                      : 'var(--gray-600)'
+                  }}>
+                    {weeklyProgress.current} / {weeklyProgress.target}
+                  </div>
+                  {weeklyProgress.current >= weeklyProgress.target && (
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      color: 'var(--success-color)', 
+                      marginTop: 'var(--space-1)',
+                      fontWeight: '500'
+                    }}>
+                      ✅ Complete!
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: 'var(--space-2)', 
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            aria-expanded={showDetails}
+            aria-controls={`habit-details-${habit.id}`}
+            aria-label={`${showDetails ? 'Hide' : 'Show'} details for ${habit.name}`}
+            className="modern-btn modern-btn-sm modern-btn-secondary"
+          >
+            {showDetails ? '👁️ Hide Details' : '👁️ Show Details'}
+          </button>
+          
+          <button
+            onClick={() => onEdit(habit)}
+            aria-label={`Edit ${habit.name} habit`}
+            className="modern-btn modern-btn-sm modern-btn-warning"
+          >
+            ✏️ Edit
+          </button>
+          
+          <button
+            onClick={() => onAddNote(habit)}
+            aria-label={`Add note to ${habit.name} habit`}
+            className="modern-btn modern-btn-sm"
+            style={{ 
+              background: 'var(--secondary-color)', 
+              color: 'var(--white)' 
+            }}
+          >
+            📝 Note
+          </button>
+          
+          <button
+            onClick={() => onViewAnalytics && onViewAnalytics(habit)}
+            aria-label={`View analytics for ${habit.name} habit`}
+            className="modern-btn modern-btn-sm modern-btn-success"
+          >
+            📊 Analytics
+          </button>
+          
+          <button
+            onClick={(e) => {
+              if (window.confirm(`Are you sure you want to delete "${habit.name}"? This action cannot be undone.`)) {
+                onDelete(habit.id);
+              }
+            }}
+            aria-label={`Delete ${habit.name} habit`}
+            className="modern-btn modern-btn-sm modern-btn-danger"
+          >
+            🗑️ Delete
+          </button>
+        </div>
       </div>
 
       {showDetails && (
-        <div style={{
-          marginTop: '12px',
-          padding: '12px',
-          backgroundColor: '#f9f9f9',
-          borderRadius: '8px',
-          border: '1px solid #e0e0e0'
-        }}>
-          <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-            <strong>Total Completions:</strong> {habit.completedDates?.length || 0}
+          <div 
+            id={`habit-details-${habit.id}`}
+            className="modern-slide-up"
+            style={{
+            marginTop: 'var(--space-4)',
+            padding: 'var(--space-4)',
+            background: 'var(--gray-50)',
+            borderRadius: 'var(--radius-lg)',
+            border: '2px solid var(--gray-200)'
+          }}
+          role="region"
+          aria-labelledby={`habit-details-title-${habit.id}`}
+        >
+          <h4 id={`habit-details-title-${habit.id}`} className="modern-text-lg" style={{ 
+            margin: '0 0 var(--space-3) 0', 
+            fontWeight: '600',
+            color: 'var(--gray-700)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)'
+          }}>
+            📊 Habit Details
+          </h4>
+          
+          <div className="modern-grid modern-grid-2" style={{ gap: 'var(--space-4)' }}>
+            <div className="modern-card">
+              <div className="modern-card-body" style={{ padding: 'var(--space-3)' }}>
+                <div style={{ 
+                  fontSize: '0.875rem', 
+                  color: 'var(--gray-600)',
+                  marginBottom: 'var(--space-1)'
+                }}>
+                  Total Completions
+                </div>
+                <div style={{
+                  fontSize: '1.5rem',
+                  fontWeight: '700',
+                  color: 'var(--primary-color)'
+                }}>
+                  {habit.completedDates?.length || 0}
+                </div>
+              </div>
+            </div>
+            
+            {habit.completedDates && habit.completedDates.length > 0 && (
+              <div className="modern-card">
+                <div className="modern-card-body" style={{ padding: 'var(--space-3)' }}>
+                  <div style={{ 
+                    fontSize: '0.875rem', 
+                    color: 'var(--gray-600)',
+                    marginBottom: 'var(--space-2)'
+                  }}>
+                    Recent Completions
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'var(--gray-500)',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 'var(--space-1)'
+                  }}>
+                    {habit.completedDates
+                      .slice(-5)
+                      .map((date, index) => (
+                        <span key={index} className="modern-badge">
+                          {new Date(date).toLocaleDateString()}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
-          {habit.completedDates && habit.completedDates.length > 0 && (
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              <strong>Recent completions:</strong>{' '}
-              {habit.completedDates
-                .slice(-5)
-                .map(date => new Date(date).toLocaleDateString())
-                .join(', ')}
-            </div>
-          )}
-          
           {habit.notes && habit.notes.length > 0 && (
-            <div style={{ marginTop: '8px' }}>
-              <strong style={{ fontSize: '12px' }}>Latest Note:</strong>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#666',
-                fontStyle: 'italic',
-                marginTop: '2px'
-              }}>
-                "{habit.notes[habit.notes.length - 1].text}"
+            <div className="modern-card" style={{ marginTop: 'var(--space-4)' }}>
+              <div className="modern-card-body" style={{ padding: 'var(--space-3)' }}>
+                <div style={{ 
+                  fontSize: '0.875rem', 
+                  fontWeight: '600',
+                  color: 'var(--gray-600)',
+                  marginBottom: 'var(--space-2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-2)'
+                }}>
+                  📝 Latest Note
+                </div>
+                <div style={{ 
+                  fontSize: '0.875rem', 
+                  color: 'var(--gray-700)',
+                  fontStyle: 'italic',
+                  padding: 'var(--space-3)',
+                  background: 'var(--white)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--gray-200)',
+                  borderLeft: '4px solid var(--primary-color)'
+                }}>
+                  "{habit.notes[habit.notes.length - 1].text}"
+                </div>
               </div>
             </div>
           )}

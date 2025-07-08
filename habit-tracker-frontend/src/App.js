@@ -1,31 +1,59 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import logo from './logo.svg';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+import './styles/modern-theme.css';
+import './styles/components.css';
+import './styles/layout.css';
+import EnhancedHabitList from './components/EnhancedHabitList';
 import EnhancedAddHabitForm from './components/EnhancedAddHabitForm';
-import EnhancedHabitItem from './components/EnhancedHabitItem';
 import EditHabitForm from './components/EditHabitForm';
-import AddNoteForm from './components/AddNoteForm';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
+import StatsCard from './components/StatsCard';
+import MetricsView from './components/MetricsView';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import IndividualHabitAnalytics from './components/IndividualHabitAnalytics';
+import AddNoteModal from './components/AddNoteModal';
 import api from './api';
 
 function App() {
   // Authentication state
   const [user, setUser] = useState(null);
-  const [authToken, setAuthToken] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
   
-  // Existing habit management state
+  // App state
   const [habits, setHabits] = useState([]);
   const [editingHabit, setEditingHabit] = useState(null);
-  const [addingNoteHabit, setAddingNoteHabit] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showMetrics, setShowMetrics] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showIndividualAnalytics, setShowIndividualAnalytics] = useState(null);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [noteHabit, setNoteHabit] = useState(null);
+  const [selectedHabit, setSelectedHabit] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [serverStatus, setServerStatus] = useState('checking');
+
+  // Scroll-to-top button state
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+
+  // Load habits from API
+  const loadHabits = async () => {
+    try {
+      const response = await api.get('/habits');
+      
+      // Handle different response structures
+      let habits = [];
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        habits = response.data.data; // API returns {status: 'success', data: [...]}
+      } else if (Array.isArray(response.data)) {
+        habits = response.data; // API returns [...] directly
+      }
+      
+      setHabits(habits);
+    } catch (err) {
+      console.error('App.js - Error loading habits:', err);
+      setError('Failed to load habits');
+      setHabits([]); // Ensure habits is always an array
+    }
+  };
 
   // Check for existing authentication on app load
   useEffect(() => {
@@ -35,8 +63,8 @@ function App() {
     if (storedToken && storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        setAuthToken(storedToken);
         setUser(parsedUser);
+        loadHabits();
       } catch (err) {
         console.error('Error parsing stored user data:', err);
         localStorage.removeItem('authToken');
@@ -46,320 +74,518 @@ function App() {
     setLoading(false);
   }, []);
 
+  // Scroll-to-top button effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollToTop(scrollTop > 300); // Show after scrolling 300px
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Smooth scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   // Authentication handlers
   const handleLoginSuccess = (userData, token) => {
     setUser(userData);
-    setAuthToken(token);
     setError('');
-    // Server status should be connected if login succeeded
-    setServerStatus('connected');
+    loadHabits();
   };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     setUser(null);
-    setAuthToken(null);
     setHabits([]);
     setError('');
   };
 
-  const handleRegisterSuccess = (data) => {
-    // Registration successful - switch to login
+  const handleRegisterSuccess = (userData, token) => {
+    // Store user data but don't immediately log them in
+    // Instead, show a success message and redirect to login
+    setError('');
     setShowRegister(false);
+    
+    // You could add a success message here if needed
+    // For now, just go back to login form
   };
 
-  // Function to check server connection
-  const checkServerConnection = useCallback(() => {
-    setServerStatus('checking');
-    setError('');
-    
-    api.get('/')
-      .then((response) => {
-        setServerStatus('connected');
-      })
-      .catch((err) => {
-        if (err.code === 'ERR_NETWORK') {
-          // Network error - server might be down or CORS issue
-        }
-        if (err.response) {
-          // Server responded with status error
-        }
-        setServerStatus('disconnected');
-        setError('Cannot connect to the server. Please make sure the backend is running.');
-      });
-  }, []);
-
-  // Check if server is available on component mount
-  useEffect(() => {
-    checkServerConnection();
-  }, [checkServerConnection]);
-
-  const fetchHabits = useCallback(() => {
-    if (serverStatus !== 'connected' || !authToken) {
-      if (!authToken) {
-        // User not authenticated - this is normal, don't show error
-        setLoading(false);
-        return;
+  // Habit management handlers
+  const handleAddHabit = async (habitData) => {
+    try {
+      const response = await api.post('/habits', habitData);
+      
+      // Handle different response structures
+      let newHabit = response.data;
+      if (response.data && response.data.data) {
+        newHabit = response.data.data; // API returns {status: 'success', data: {...}}
       }
-      setError('Cannot connect to the server. Please make sure the backend is running.');
-      setLoading(false);
+      
+      setHabits(prevHabits => {
+        const updatedHabits = [...prevHabits, newHabit];
+        return updatedHabits;
+      });
+      setShowAddForm(false);
+      
+      // Refresh habits to ensure consistency
+      await loadHabits();
+      
+    } catch (err) {
+      console.error('App.js - Error adding habit:', err);
+      setError('Failed to add habit');
+      throw err; // Re-throw to allow EnhancedAddHabitForm to handle it
+    }
+  };
+
+  const handleCompleteHabit = async (habitId) => {
+    if (!habitId) {
+      console.error('Habit ID is undefined');
+      setError('Invalid habit ID');
       return;
     }
-    
-    console.log('Fetching habits...'); // Debug log
-    setLoading(true);
-    api.get('/habits')
-      .then(res => {
-        console.log('Fetched habits response:', res.data); // Debug log
-        if (res.data && res.data.data) {
-          setHabits(res.data.data);
-          setError(''); // Clear any error messages on success
-          console.log('Updated habits state:', res.data.data); // Debug log
-        } else {
-          setError('Received invalid data from server');
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching habits:', error); // Debug log
-        if (error.response && error.response.status === 401) {
-          // Authentication error - will be handled by axios interceptor
-          setError('Session expired. Please log in again.');
-        } else if (error.code === 'ERR_NETWORK') {
-          setError('Network error - cannot connect to the server. Please make sure the backend is running.');
-        } else {
-          setError(`Failed to load habits: ${error.message || 'Unknown error'}`);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [serverStatus, authToken]);
-
-  useEffect(() => {
-    if (serverStatus === 'connected' && authToken) {
-      fetchHabits();
+    try {
+      await api.post(`/habits/${habitId}/complete`);
+      loadHabits(); // Refresh habits
+    } catch (err) {
+      console.error('Error completing habit:', err);
+      setError('Failed to complete habit');
     }
-  }, [serverStatus, authToken, fetchHabits]);
-
-  const handleAdd = () => fetchHabits();
-  const handleEdit = (habit) => setEditingHabit(habit);
-  const handleUpdate = () => {
-    setEditingHabit(null);
-    fetchHabits();
-  };
-  const handleDelete = (id) => {
-    api.delete(`/habits/${id}`)
-      .then(fetchHabits)
-      .catch((error) => {
-        setError('Failed to delete habit: ' + (error.message || 'Unknown error'));
-      });
   };
 
-  // Add note to habit
-  const handleAddNote = (habit) => {
-    setAddingNoteHabit(habit);
+  const handleEditHabit = async (habitId, habitData) => {
+    try {
+      const response = await api.put(`/habits/${habitId}`, habitData);
+      setHabits(prevHabits => 
+        prevHabits.map(habit => 
+          habit.id === habitId ? response.data : habit
+        )
+      );
+      setEditingHabit(null);
+    } catch (err) {
+      console.error('Error editing habit:', err);
+      setError('Failed to edit habit');
+    }
   };
 
-  const handleNoteAdded = () => {
-    setAddingNoteHabit(null);
-    fetchHabits();
+  const handleDeleteHabit = async (habitId) => {
+    if (!habitId) {
+      console.error('Habit ID is undefined');
+      setError('Invalid habit ID');
+      return;
+    }
+    if (window.confirm('Are you sure you want to delete this habit?')) {
+      try {
+        await api.delete(`/habits/${habitId}`);
+        setHabits(prevHabits => prevHabits.filter(habit => habit.id !== habitId));
+      } catch (err) {
+        console.error('Error deleting habit:', err);
+        setError('Failed to delete habit');
+      }
+    }
   };
 
-  // Handle completion changes from enhanced UI
-  const handleCompletionChange = async (habitId, newCount) => {
-    console.log(`Habit ${habitId} completion count changed to ${newCount}`);
-    // Refresh habits data to update analytics dashboard
-    await fetchHabits();
-  };
-
-  // Handle individual habit analytics
-  const handleViewAnalytics = (habit) => {
-    // Show individual habit analytics modal
-    setShowIndividualAnalytics(habit);
-  };
-
-  // If loading initial auth check, show loading
-  if (loading && !user && !authToken) {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1>Habit Tracker</h1>
-          <div>Loading...</div>
-        </header>
-      </div>
-    );
-  }
-
-  // If not authenticated, show login/register forms
-  if (!user || !authToken) {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1>Habit Tracker</h1>
-          <p style={{ color: '#666', marginBottom: '20px' }}>
-            Your personal habit tracking companion
-          </p>
+  // Helper function to calculate stats with new timestamp-based completion system
+  const calculateStats = (habits) => {
+    const safeHabits = Array.isArray(habits) ? habits : [];
+    const today = new Date().toISOString().slice(0, 10);
+    
+    // Calculate completions today (count all habits with completions today)
+    const completedToday = safeHabits.filter(habit => {
+      const completedDates = habit.completedDates || [];
+      return completedDates.some(dateTime => dateTime.slice(0, 10) === today);
+    }).length;
+    
+    // Calculate success rate (habits meeting their expected frequency in the last 7 days)
+    const last7Days = Array.from({length: 7}, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().slice(0, 10);
+    });
+    
+    // Helper function to parse expected frequency (same as in AnalyticsDashboard)
+    const parseExpectedFrequency = (frequency) => {
+      if (!frequency) return { timesPerPeriod: 1, periodDays: 1 }; // Default to daily
+      
+      // Handle structured frequency object
+      if (typeof frequency === 'object' && frequency.count && frequency.period) {
+        const { count, period } = frequency;
+        switch (period) {
+          case 'day':
+            return { timesPerPeriod: count, periodDays: 1 };
+          case 'week':
+            return { timesPerPeriod: count, periodDays: 7 };
+          case 'month':
+            return { timesPerPeriod: count, periodDays: 30 };
+          default:
+            return { timesPerPeriod: 1, periodDays: 1 };
+        }
+      }
+      
+      // Handle legacy string frequency
+      if (typeof frequency !== 'string') return { timesPerPeriod: 1, periodDays: 1 };
+      
+      const freq = frequency.toLowerCase();
+      if (freq.includes('daily') || freq === 'daily') return { timesPerPeriod: 1, periodDays: 1 };
+      if (freq.includes('weekly') || freq === 'weekly') return { timesPerPeriod: 1, periodDays: 7 };
+      
+      // Parse patterns like "2 times/week", "3 times per week", etc.
+      const match = freq.match(/(\d+)\s*times?\s*(?:per\s*|\/)\s*week/);
+      if (match) return { timesPerPeriod: parseInt(match[1]), periodDays: 7 };
+      
+      // Parse patterns like "every 2 days", "every 3 days"
+      const everyMatch = freq.match(/every\s*(\d+)\s*days?/);
+      if (everyMatch) {
+        const days = parseInt(everyMatch[1]);
+        return { timesPerPeriod: 1, periodDays: days };
+      }
+      
+      return { timesPerPeriod: 1, periodDays: 1 }; // Default to daily if can't parse
+    };
+    
+    const habitsMeetingExpectedFrequency = safeHabits.filter(habit => {
+      const completedDates = habit.completedDates || [];
+      const { timesPerPeriod, periodDays } = parseExpectedFrequency(habit.expectedFrequency);
+      
+      if (periodDays === 1) {
+        // Daily habit: count successful days in last 7 days
+        let successfulDays = 0;
+        for (let i = 0; i < 7; i++) {
+          const checkDate = new Date();
+          checkDate.setDate(checkDate.getDate() - i);
+          const dayStr = checkDate.toISOString().slice(0, 10);
           
-          {serverStatus === 'disconnected' && (
-            <div>
-              <div style={{color: 'red', marginBottom: '10px'}}>
-                Cannot connect to server. Please try again later.
-              </div>
-              <button 
-                onClick={checkServerConnection} 
-                style={{padding: '8px 16px', margin: '5px', cursor: 'pointer'}}
-              >
-                Retry Connection
-              </button>
-            </div>
-          )}
+          const dayCompletions = completedDates.filter(dateTime => 
+            dateTime.slice(0, 10) === dayStr
+          ).length;
+          
+          if (dayCompletions >= timesPerPeriod) {
+            successfulDays++;
+          }
+        }
+        
+        // Success if at least 50% of days met the goal
+        return successfulDays >= Math.ceil(7 * 0.5);
+        
+      } else if (periodDays === 7) {
+        // Weekly habit: check if this week's goal was met
+        const last7DaysCompletions = completedDates.filter(dateTime => 
+          last7Days.includes(dateTime.slice(0, 10))
+        ).length;
+        
+        return last7DaysCompletions >= timesPerPeriod;
+        
+      } else {
+        // Other frequencies: use proportional calculation
+        const last7DaysCompletions = completedDates.filter(dateTime => 
+          last7Days.includes(dateTime.slice(0, 10))
+        ).length;
+        
+        const expectedCompletions = Math.ceil((timesPerPeriod * 7) / periodDays);
+        return last7DaysCompletions >= Math.max(1, Math.ceil(expectedCompletions * 0.5));
+      }
+    }).length;
+    
+    const successRate = safeHabits.length > 0 ? 
+      Math.round((habitsMeetingExpectedFrequency / safeHabits.length) * 100) : 0;
+    
+    // Calculate current streak (consecutive days with at least one habit completed)
+    let currentStreak = 0;
+    
+    // Get all unique dates where any habit was completed
+    const allCompletionDates = new Set();
+    safeHabits.forEach(habit => {
+      const completedDates = habit.completedDates || [];
+      completedDates.forEach(dateTime => {
+        const dateOnly = dateTime.slice(0, 10); // Extract date part (YYYY-MM-DD)
+        allCompletionDates.add(dateOnly);
+      });
+    });
+    
+    // Convert to sorted array (newest first)
+    const sortedDates = Array.from(allCompletionDates).sort((a, b) => b.localeCompare(a));
+    
+    if (sortedDates.length === 0) {
+      currentStreak = 0;
+    } else {
+      // Start from today and count consecutive days
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      
+      // Check if today has any completions
+      if (!sortedDates.includes(todayStr)) {
+        currentStreak = 0;
+      } else {
+        // Count consecutive days starting from today
+        let checkDate = new Date(today);
+        
+        for (let i = 0; i < 365; i++) { // Check up to 365 days back
+          const checkDateStr = checkDate.toISOString().slice(0, 10);
+          
+          if (sortedDates.includes(checkDateStr)) {
+            currentStreak++;
+            // Move to previous day
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+      }
+    }
+    
+    return {
+      totalHabits: safeHabits.length,
+      completedToday,
+      successRate,
+      currentStreak
+    };
+  };
 
-          {serverStatus === 'connected' && (
-            <>
-              {showRegister ? (
-                <RegisterForm 
-                  onRegisterSuccess={handleRegisterSuccess}
-                  onSwitchToLogin={() => setShowRegister(false)}
-                />
-              ) : (
-                <LoginForm 
-                  onLoginSuccess={handleLoginSuccess}
-                  onSwitchToRegister={() => setShowRegister(true)}
-                />
-              )}
-            </>
-          )}
+  // Calculate stats
+  const stats = calculateStats(habits);
+  const safeHabits = Array.isArray(habits) ? habits : [];
 
-          {serverStatus === 'checking' && (
-            <div style={{ margin: '20px 0' }}>
-              Connecting to server...
-            </div>
-          )}
-        </header>
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Loading...</div>
       </div>
     );
   }
 
-  // Authenticated user - show main application
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <h1>Habit Tracker</h1>
-        
-        {/* User info and logout */}
-        <div style={{ 
-          marginBottom: '20px', 
-          padding: '10px', 
-          backgroundColor: '#f0f0f0', 
-          borderRadius: '5px',
-          color: '#333'
-        }}>
-          <span>Welcome, {user.firstName} {user.lastName}!</span>
-          <button 
-            onClick={handleLogout}
-            style={{
-              marginLeft: '15px',
-              padding: '5px 10px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer'
-            }}
-          >
-            Logout
-          </button>
-          <button 
-            onClick={() => setShowAnalytics(true)}
-            style={{
-              marginLeft: '10px',
-              padding: '5px 10px',
-              backgroundColor: '#2196f3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer'
-            }}
-          >
-            📊 Analytics
-          </button>
+  // Show authentication forms if user is not logged in
+  if (!user) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <h1>🎯 Habit Tracker</h1>
+            <p>Build better habits, one day at a time</p>
+          </div>
+          
+          {error && <div className="error-message">{error}</div>}
+          
+          {showRegister ? (
+            <RegisterForm
+              onRegisterSuccess={handleRegisterSuccess}
+              onSwitchToLogin={() => setShowRegister(false)}
+            />
+          ) : (
+            <LoginForm
+              onLoginSuccess={handleLoginSuccess}
+              onSwitchToRegister={() => setShowRegister(true)}
+            />
+          )}
         </div>
+      </div>
+    );
+  }
 
-        {error && (
-          <div>
-            <div style={{color: 'red', marginBottom: '10px'}}>{error}</div>
+  return (
+    <div className="app">
+      <header className="app-header">
+        <div className="header-content">
+          <div className="header-left">
+            <h1>🎯 Habit Tracker</h1>
+            <p>Welcome back, {user.firstName ? `${user.firstName} ${user.lastName}` : user.email}!</p>
+          </div>
+          <div className="header-right">
             <button 
-              onClick={checkServerConnection} 
-              style={{padding: '8px 16px', margin: '5px', cursor: 'pointer'}}
+              className="btn btn-primary"
+              onClick={() => {
+                setShowAnalytics(true);
+              }}
+              style={{ marginRight: '10px' }}
             >
-              Reconnect to Server
+              📊 Analytics
+            </button>
+            <button 
+              className="btn btn-secondary"
+              onClick={handleLogout}
+            >
+              Logout
             </button>
           </div>
-        )}
-        
-        
-        <EnhancedAddHabitForm onHabitAdded={handleAdd} />
-        
-        {loading ? (
-          <div>Loading habits...</div>
-        ) : (
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            {habits.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-                backgroundColor: '#f9f9f9',
-                borderRadius: '12px',
-                border: '1px solid #e0e0e0',
-                color: '#666'
-              }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎯</div>
-                <h3 style={{ margin: '0 0 8px 0', color: '#333' }}>No habits yet!</h3>
-                <p style={{ margin: 0 }}>Create your first habit above to get started on your journey.</p>
+        </div>
+      </header>
+
+      <main className="app-main">
+        <div className="container">
+          {error && <div className="error-message">{error}</div>}
+          
+          {/* Stats Section */}
+          <section className="stats-section">
+            <div className="stats-grid">
+              <StatsCard
+                title="Total Habits"
+                value={stats.totalHabits}
+                icon="📊"
+              />
+              <StatsCard
+                title="Completed Today"
+                value={stats.completedToday}
+                icon="✅"
+              />
+              <StatsCard
+                title="Success Rate"
+                value={`${stats.successRate}%`}
+                icon="📈"
+              />
+              <StatsCard
+                title="Current Streak"
+                value={`${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}`}
+                icon="🔥"
+              />
+            </div>
+          </section>
+
+          {/* Add Habit Section */}
+          <section className="add-habit-section">
+            <div className="section-header">
+              <h2>Add New Habit</h2>
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowAddForm(!showAddForm)}
+              >
+                {showAddForm ? 'Cancel' : '+ Add Habit'}
+              </button>
+            </div>
+            
+            {showAddForm && (
+              <EnhancedAddHabitForm
+                onAddHabit={handleAddHabit}
+                onCancel={() => setShowAddForm(false)}
+              />
+            )}
+          </section>
+
+          {/* Habits Section */}
+          <section className="habits-section">
+            <div className="section-header">
+              <h2>Your Habits</h2>
+            </div>
+            
+            {safeHabits.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🌱</div>
+                <h3>No habits yet</h3>
+                <p>Start building better habits by adding your first one!</p>
               </div>
             ) : (
-              habits.map(habit => (
-                <EnhancedHabitItem
-                  key={habit.id}
-                  habit={habit}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onAddNote={handleAddNote}
-                  onCompletionChange={handleCompletionChange}
-                  onViewAnalytics={handleViewAnalytics}
-                />
-              ))
+              <EnhancedHabitList
+                habits={safeHabits}
+                onEdit={setEditingHabit}
+                onDelete={handleDeleteHabit}
+                onMarkComplete={handleCompleteHabit}
+                onCompletionChange={loadHabits}
+                onViewMetrics={(habit) => {
+                  setSelectedHabit(habit);
+                  setShowMetrics(true);
+                }}
+                onAddNote={(habit) => {
+                  setNoteHabit(habit);
+                  setShowAddNote(true);
+                }}
+              />
             )}
+          </section>
+        </div>
+      </main>
+
+      {/* Edit Habit Modal */}
+      {editingHabit && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <EditHabitForm
+              habit={editingHabit}
+              onEditHabit={handleEditHabit}
+              onCancel={() => setEditingHabit(null)}
+            />
           </div>
-        )}
-        {editingHabit && (
-          <EditHabitForm
-            habit={editingHabit}
-            onHabitUpdated={handleUpdate}
-          />
-        )}
-        {addingNoteHabit && (
-          <AddNoteForm
-            habit={addingNoteHabit}
-            onNoteAdded={handleNoteAdded}
-            onCancel={() => setAddingNoteHabit(null)}
-          />
-        )}
-        {showAnalytics && (
-          <AnalyticsDashboard
-            habits={habits}
-            onClose={() => setShowAnalytics(false)}
-          />
-        )}
-        {showIndividualAnalytics && (
-          <IndividualHabitAnalytics
-            habit={showIndividualAnalytics}
-            onClose={() => setShowIndividualAnalytics(null)}
-          />
-        )}
-      </header>
+        </div>
+      )}
+
+      {/* Metrics View Modal */}
+      {showMetrics && (
+        <MetricsView
+          habits={habits}
+          selectedHabit={selectedHabit}
+          onClose={() => {
+            setShowMetrics(false);
+            setSelectedHabit(null);
+          }}
+        />
+      )}
+
+      {/* Analytics Dashboard Modal */}
+      {showAnalytics && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '1200px', width: '90%' }}>
+            <AnalyticsDashboard
+              habits={habits}
+              onClose={() => setShowAnalytics(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Add Note Modal */}
+      {showAddNote && noteHabit && (
+        <AddNoteModal
+          habit={noteHabit}
+          onClose={() => {
+            setShowAddNote(false);
+            setNoteHabit(null);
+          }}
+          onNoteAdded={() => {
+            loadHabits(); // Refresh habits to show new note
+          }}
+        />
+      )}
+
+      {/* Scroll-to-top Button */}
+      {showScrollToTop && (
+        <button
+          onClick={scrollToTop}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            backgroundColor: '#2196f3',
+            color: 'white',
+            border: 'none',
+            fontSize: '20px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            zIndex: 1000,
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.backgroundColor = '#1976d2';
+            e.target.style.transform = 'scale(1.1)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.backgroundColor = '#2196f3';
+            e.target.style.transform = 'scale(1)';
+          }}
+          title="Scroll to top"
+        >
+          ⬆️
+        </button>
+      )}
     </div>
   );
 }

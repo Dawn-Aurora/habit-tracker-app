@@ -327,19 +327,22 @@ export const deleteHabit = async (req: Request, res: Response) => {    try {
 };
 
 export const markHabitCompleted = async (req: Request, res: Response) => {
-    console.log('DEBUG: markHabitCompleted endpoint hit', req.method, req.originalUrl, req.body);
     try {
         const { id } = req.params;
         const { date } = req.body;
         const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
         validateHabitId(id);
-        const completedDate = date || new Date().toISOString().slice(0, 10);
+        
+        // Use full timestamp instead of date-only to allow multiple completions per day
+        const completedTimestamp = date || new Date().toISOString();
+        
         const habits = await dataClient.getHabits(userId);
         const habit = habits.find((h: any) => h.id === id);
         if (!habit) return res.status(404).json({ status: 'error', message: 'Habit not found' });
         
         const completedDates = getExistingValue('completedDates', habit);
-        if (!completedDates.includes(completedDate)) completedDates.push(completedDate);
+        // Always add the new completion (no duplicate check for timestamps)
+        completedDates.push(completedTimestamp);
         
         // Preserve all existing data
         const existingTags = getExistingValue('tags', habit);
@@ -369,14 +372,16 @@ export const markHabitCompleted = async (req: Request, res: Response) => {
 };
 
 export const addHabitNote = async (req: Request, res: Response) => {
-    console.log('DEBUG: addHabitNote endpoint hit', req.method, req.originalUrl, req.body);
     try {
         const { id } = req.params;
         const { note, text, date } = req.body;
+        const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
+        
         validateHabitId(id);
         const noteText = note || text;
         if (!noteText) return res.status(400).json({ status: 'error', message: 'Note text required' });
-        const habits = await dataClient.getHabits();
+        
+        const habits = await dataClient.getHabits(userId);
         const habit = habits.find((h: any) => h.id === id);
         if (!habit) return res.status(404).json({ status: 'error', message: 'Habit not found' });
         
@@ -386,14 +391,17 @@ export const addHabitNote = async (req: Request, res: Response) => {
         const existingTags = getExistingValue('tags', habit);
         const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
         
-        // Add new note
-        existingNotes.push({ date: date || new Date().toISOString().slice(0, 10), text: noteText });
+        // Add new note with full timestamp
+        existingNotes.push({ 
+            date: date || new Date().toISOString(), 
+            text: noteText 
+        });
           // Convert arrays to strings for SharePoint
         const completionsString = existingCompletedDates.join(',');
         const tagsString = existingTags.join(',');
         const notesString = JSON.stringify(existingNotes);
         
-        await dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency);
+        await dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
         
         res.json({ 
             status: 'success', 
@@ -489,11 +497,6 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
                 7
             );
             
-            console.log('DEBUG: This week range:', monday.toISOString().slice(0, 10), 'to', sunday.toISOString().slice(0, 10));
-            console.log('DEBUG: This week completions:', thisWeekCompletions);
-            console.log('DEBUG: Days elapsed this week:', daysElapsedThisWeek);
-            console.log('DEBUG: Expected frequency:', expectedFreq.timesPerWeek, 'times per week');
-            
             // Calculate expected completions for this week based on actual frequency
             const expectedCompletionsThisWeek = expectedFreq.timesPerWeek;
             
@@ -521,11 +524,6 @@ export const getHabitMetrics = async (req: Request, res: Response) => {
                 }
             }
         }
-          console.log('DEBUG: This week calculation results:', {
-            totalCompletions,
-            completionRate,
-            currentStreak
-        });
         
         const metrics = {
             currentStreak: currentStreak,
@@ -591,7 +589,6 @@ export const removeHabitCompletion = async (req: Request, res: Response) => {
         const userId = (req as AuthenticatedRequest).user?.id;
         
         validateHabitId(id);
-        const completionDate = date || new Date().toISOString().slice(0, 10);
         
         const habits = await dataClient.getHabits(userId);
         const habit = habits.find((h: any) => h.id === id);
@@ -600,14 +597,28 @@ export const removeHabitCompletion = async (req: Request, res: Response) => {
         // Get existing completions
         const completedDates = getExistingValue('completedDates', habit);
         
-        // Remove one completion for the specified date
-        const dateOnly = completionDate.slice(0, 10);
-        const index = completedDates.findIndex((completion: string) => 
-            completion.slice(0, 10) === dateOnly
-        );
-        
-        if (index !== -1) {
-            completedDates.splice(index, 1);
+        if (date) {
+            // Remove specific completion by exact timestamp or date
+            const index = completedDates.findIndex((completion: string) => {
+                // Try exact match first (for timestamp), then date match
+                return completion === date || completion.slice(0, 10) === date.slice(0, 10);
+            });
+            
+            if (index !== -1) {
+                completedDates.splice(index, 1);
+            }
+        } else {
+            // Remove the most recent completion for today
+            const today = new Date().toISOString().slice(0, 10);
+            const todayCompletions = completedDates
+                .map((completion: string, index: number) => ({ completion, index }))
+                .filter(({ completion }: { completion: string }) => completion.slice(0, 10) === today)
+                .sort((a: { completion: string }, b: { completion: string }) => 
+                    new Date(b.completion).getTime() - new Date(a.completion).getTime());
+            
+            if (todayCompletions.length > 0) {
+                completedDates.splice(todayCompletions[0].index, 1);
+            }
         }
         
         // Preserve existing data
