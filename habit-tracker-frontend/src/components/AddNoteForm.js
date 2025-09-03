@@ -17,17 +17,12 @@ function AddNoteForm({ habit, onNoteAdded, onCancel }) {
     setLoading(true);
     setError('');
     
-    // Create timestamp with exact current time
     const now = new Date();
     
-    // If user selected today's date, use current time
-    // If user selected a different date, use noon of that date to avoid timezone issues
     let noteDateTime;
     if (date === new Date().toISOString().slice(0, 10)) {
-      // Today - use current time
       noteDateTime = now;
     } else {
-      // Different date - use noon to avoid timezone confusion
       const selectedDate = new Date(date + 'T12:00:00');
       noteDateTime = selectedDate;
     }

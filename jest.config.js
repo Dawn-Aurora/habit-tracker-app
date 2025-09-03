@@ -12,8 +12,6 @@ module.exports = {
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   testPathIgnorePatterns: ['/node_modules/'],
-  // Add this to help Jest detect open handles
   detectOpenHandles: true,
-  // Add this to force Jest to exit after tests complete
   forceExit: true
 };

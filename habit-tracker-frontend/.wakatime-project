@@ -1,0 +1,24 @@
+[settings]
+debug = false
+hidefilenames = false
+ignore =
+    COMMIT_EDITMSG$
+    PULLREQ_EDITMSG$
+    MERGE_MSG$
+    TAG_EDITMSG$
+    ^/var/
+    ^/tmp/
+    ^/private/
+    ^/proc/
+    ^/sys/
+    ^/dev/
+    ^/boot/
+exclude =
+    ^COMMIT_EDITMSG$
+    ^PULLREQ_EDITMSG$
+    ^MERGE_MSG$
+    ^TAG_EDITMSG$
+include =
+    .*
+offline = true
+timeout = 30

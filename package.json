@@ -15,7 +15,11 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:frontend": "cd habit-tracker-frontend && npm test",
-    "deploy:render": "npm run build && npm run start:prod"
+    "deploy:render": "npm run build && npm run start:prod",
+    "deploy:azure": "npm run build && npm run start:prod",
+    "build:azure": "npm run build:backend && npm run build:frontend && npm run copy:frontend",
+    "copy:frontend": "cp -r habit-tracker-frontend/build/* dist/public/ || xcopy habit-tracker-frontend\\build\\* dist\\public\\ /e /i /y",
+    "postinstall": "npm run build:backend"
   },
   "dependencies": {
     "@azure/identity": "^4.10.1",

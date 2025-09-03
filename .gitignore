@@ -1,22 +1,68 @@
+# Dependencies
 node_modules/
-backend/node_modules/
-habit-tracker-frontend/node_modules/
+*/node_modules/
 
+# Build outputs
 dist/
-backend/dist/
-habit-tracker-frontend/build/
+build/
+*/dist/
+*/build/
 
+# Test coverage
 coverage/
-backend/coverage/
-habit-tracker-frontend/coverage/
+*/coverage/
 
-# Environment variables
+# Environment variables - CRITICAL: Never commit these
 .env
 .env.*
-backend/.env
-backend/.env.*
-habit-tracker-frontend/.env
-habit-tracker-frontend/.env.*
+*/.env
+*/.env.*
+
+# Azure deployment artifacts
+.azure/
+swa-cli.config.json
+swa-db.json
+azure-pipelines.yml
+.deployment
+
+# Keep GitHub workflows but ignore temporary workflow files
+!.github/
+!.github/workflows/
+.github/workflows/*.tmp
+
+# Vercel deployment artifacts (legacy - cleaned up)
+.vercel/
+.vercel
+
+# Render deployment artifacts (legacy - cleaned up)
+render.yaml
+
+# Security - Never commit secrets or credentials
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets.json
+config/production.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Cache directories
+.npm
+.eslintcache
+.cache/
+.parcel-cache/
 
 # Common development files
 .DS_Store
@@ -31,88 +77,34 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# Media files (optional - remove if you want to track media)
+*/media/
+media/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.JPG
+*.JPEG
+*.PNG
+*.GIF
+*.SVG
 
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# Development and documentation files (already in archive/)
+# Development documentation and session files
 archive/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-habit-tracker-frontend/media
-# Temporary development files
-deployment-guide.md
-remaining-tasks.txt
-Clue.txt
-test-output.txt
+*SESSION*.md
+*GUIDE*.md
+*TASKS*.md
+*TESTING*.md
+*DEPLOYMENT*.md
+*CHECKLIST*.md
+*SUMMARY*.md
+test-output*.txt
+*-output.txt
+*.bat
+docs/
 
-# Private development/session files
-NEXT-SESSION-ROADMAP.md
-PROJECT-DOCUMENTATION.md
-SESSION-*-*.md
-TECHNICAL-REFERENCE.md
+# WakaTime tracking files
 .wakatime-project
-commands-to-run.bat
-diagnostic-output.txt
-quick-test.bat
-test-health-endpoint.bat
-USER-MANUAL.md
-test-results-full.txt
-frontend-test-results.txt
-TEST-REPORTING-GUIDE.md
-FINAL-TEST-COMPLETION-SUMMARY.md
-NEXT-SESSION-UPDATED-TASKS.md
-habit-tracker-frontend/test-results.json
-habit-tracker-frontend/test-results.txt
-PARTIAL-TEST-STRATEGIES.md
-habit-tracker-frontend/test-output-full.txt
-UPDATED-NEXT-SESSION-TASKS.md
-habit-tracker-frontend/enhanced-completion-test-output.txt
-App-js-test-completion-output.txt
-EnhancedAddHabitForm-test-completion-summary.txt
-COMPREHENSIVE-TEST-COVERAGE-SUMMARY.md
-EditHabitForm-test-completion-summary.txt
-NEXT-SESSION-COMPREHENSIVE-TASKS.md
-NEXT-SESSION-COMPREHENSIVE-TASKS.md
-NEXT-SESSION-UI-AND-COVERAGE-PLAN.md
-UI-POLISH-COMPLETION-SUMMARY.md
-UI-MODERNIZATION-COMPLETION-SUMMARY.md
-NEXT-SESSION-COMPREHENSIVE-TASK-LIST.md
-test-output-2.txt
-DEPLOYMENT-STRATEGY.md
-DEPLOYMENT-GUIDE-COMPLETE.md
-COMPLETION-SYSTEM-UPDATE.md
-ANALYTICS-CALCULATION-GUIDE.md
-CALENDAR-TESTING-CHECKLIST.md
-CALENDAR-FEATURE-IMPLEMENTATION.md
-METRICSVIEW-DYNAMIC-PERIODS-UPDATE.md
-test-calendar.ps1
-.gitignore
-docs/CALENDAR-CELL-UNIFORMITY-FIX.md
-docs/CALENDAR-ENHANCEMENT-SUMMARY.md
-success-rate-logic-implementation.txt
-.gitignore
-success-rate-fix-test.txt
-FEATURE-TESTING-GUIDE.md
-Restore/MetricsView 2.js
-next.txt
-NEXT-SESSION-TASKS.md
-MOBILE-TESTING-GUIDE.md
-Tasks_lists.md
-merged_output.txt
+*/.wakatime-project

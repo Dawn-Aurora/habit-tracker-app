@@ -2,7 +2,7 @@
 
 A modern, responsive HTML/CSS/JavaScript interface for the Habit Tracker application.
 
-## 🚀 Features
+## Features
 
 - **Clean, Modern Design**: Beautiful gradient backgrounds and smooth animations
 - **Responsive Layout**: Works perfectly on desktop, tablet, and mobile devices
@@ -12,7 +12,7 @@ A modern, responsive HTML/CSS/JavaScript interface for the Habit Tracker applica
 - **Category Filtering**: Filter habits by category and frequency
 - **Interactive UI**: Smooth transitions and user-friendly interface
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 public/
@@ -21,7 +21,7 @@ public/
 └── app.js          # JavaScript functionality
 ```
 
-## 🛠️ Setup Instructions
+## Setup Instructions
 
 ### Method 1: Using the Backend Server (Recommended)
 
@@ -66,7 +66,7 @@ public/
 
 3. **Make sure your backend server is running on port 5000**
 
-## 🎨 Design Features
+## Design Features
 
 ### Color Scheme
 - Primary: Gradient from `#667eea` to `#764ba2`
@@ -88,7 +88,7 @@ public/
 - Font Awesome 6.0 for consistent iconography
 - Semantic icons for better user experience
 
-## 🔧 API Integration
+## API Integration
 
 The interface connects to the backend API at `http://localhost:5000/api` with the following endpoints:
 
@@ -103,7 +103,7 @@ The interface connects to the backend API at `http://localhost:5000/api` with th
 - `DELETE /api/habits/:id` - Delete a habit
 - `POST /api/habits/:id/complete` - Mark habit as complete
 
-## 📱 Responsive Design
+## Responsive Design
 
 The interface is fully responsive with breakpoints at:
 - **Desktop**: 1200px and above
@@ -111,7 +111,7 @@ The interface is fully responsive with breakpoints at:
 - **Mobile**: 480px to 767px
 - **Small Mobile**: Below 480px
 
-## 🎯 User Experience Features
+## User Experience Features
 
 ### Authentication
 - Form validation with real-time feedback
@@ -131,21 +131,21 @@ The interface is fully responsive with breakpoints at:
 - Filter and search functionality
 - Empty state handling
 
-## 🔒 Security Features
+## Security Features
 
 - Input validation and sanitization
 - XSS protection through HTML escaping
 - CSRF protection via token authentication
 - Rate limiting through backend
 
-## 🚀 Performance Optimizations
+## Performance Optimizations
 
 - Minimal HTTP requests
 - Efficient DOM manipulation
 - Lazy loading of non-critical resources
 - Optimized CSS and JavaScript
 
-## 📦 Dependencies
+## Dependencies
 
 ### External Libraries
 - **Font Awesome 6.0**: Icons
@@ -156,7 +156,7 @@ The interface is fully responsive with breakpoints at:
 - No bundling or compilation needed
 - Easy to customize and extend
 
-## 🎨 Customization
+## Customization
 
 ### Colors
 Edit the CSS variables in `styles.css`:
@@ -187,7 +187,7 @@ Modify the grid layouts and spacing:
 }
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -213,7 +213,7 @@ const DEBUG = true;
 // Add console.log statements throughout the code
 ```
 
-## 🔄 Future Enhancements
+## Future Enhancements
 
 - [ ] Dark mode toggle
 - [ ] Habit streaks visualization
@@ -223,7 +223,7 @@ const DEBUG = true;
 - [ ] Progressive Web App (PWA) support
 - [ ] Offline functionality
 
-## 📞 Support
+## Support
 
 For issues or questions:
 1. Check the browser console for errors
@@ -231,6 +231,6 @@ For issues or questions:
 3. Check network tab in developer tools
 4. Review API responses for error messages
 
-## 🎉 Enjoy Your Habit Tracking Journey!
+## Enjoy Your Habit Tracking Journey!
 
 This HTML interface provides a clean, modern way to track your habits and build better routines. The responsive design ensures a great experience on any device, while the intuitive interface makes habit tracking enjoyable and effortless.
