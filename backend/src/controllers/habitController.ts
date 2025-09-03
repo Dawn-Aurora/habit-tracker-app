@@ -129,7 +129,6 @@ const safeJsonParse = (value: string, fallback: any = []) => {
     try {
         return JSON.parse(value);
     } catch (e: any) {
-        console.log('JSON parse error for value:', value, 'Error:', e.message);
         return fallback;
     }
 };
@@ -254,8 +253,14 @@ export const updateHabit = async (req: Request, res: Response) => {
         const { name, completedDates, completions, tags, notes, expectedFrequency } = req.body;
         validateHabitId(id);
         
-        // Fetch the current habit to preserve existing fields
-        const currentHabit = (await dataClient.getHabits()).find((h: any) => h.id === id);
+        // Get userId from authenticated user for proper filtering
+        const userId = (req as AuthenticatedRequest).user?.id;
+        
+        // Fetch the current habit to preserve existing fields (filtered by user)
+        const allHabits = await dataClient.getHabits(userId);
+        
+        const currentHabit = allHabits.find((h: any) => h.id === id);
+        
         if (!currentHabit) throw new NotFoundError('Habit not found');
         
         // Only validate name if provided and not blank
@@ -288,7 +293,6 @@ export const updateHabit = async (req: Request, res: Response) => {
         const tagsStr = finalTags.join(',');
         const notesStr = JSON.stringify(finalNotes);
           // Update with all fields preserved
-        const userId = (req as AuthenticatedRequest).user?.id;
         const result = await dataClient.updateHabit(
             id,
             finalName,
@@ -391,9 +395,10 @@ export const addHabitNote = async (req: Request, res: Response) => {
         const existingTags = getExistingValue('tags', habit);
         const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
         
-        // Add new note with full timestamp
+        // Add new note with full timestamp - ensure we preserve the full ISO string
+        const fullTimestamp = date || new Date().toISOString();
         existingNotes.push({ 
-            date: date || new Date().toISOString(), 
+            date: fullTimestamp, 
             text: noteText 
         });
           // Convert arrays to strings for SharePoint

@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Production configuration - remove mock data flag
+// process.env.USE_MOCK_DATA = 'true';
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

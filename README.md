@@ -1,15 +1,25 @@
 # Habit Tracker App
 
-## 🚀 Features
+A full-stack habit tracking application with SharePoint integration for data persistence.
+
+## Live Demo
+
+**Frontend**: Ready for Vercel Deployment
+**Backend API**: Ready for Render Deployment
+
+## Features
 
 - **Habit Management**: Create, edit, and delete habits with customizable frequencies
-- **Progress Tracking**: Mark habits as complete and track your streaks
+- **Progress Tracking**: Mark habits as complete and track your streaks  
 - **Analytics Dashboard**: Visualize your progress with completion rates and statistics
-- **Enhanced UI Components**: Modern, responsive interface with intuitive controls
+- **Note Taking**: Add personal notes to your habits for reflection
+- **Calendar View**: Visual calendar interface for tracking completions
+- **User Authentication**: Secure user registration and login system
+- **SharePoint Integration**: Reliable cloud data storage with Microsoft SharePoint
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 - **RESTful API**: Well-documented backend API with comprehensive testing
-- **Frequency System**: Set habits for daily, weekly, monthly, or yearly goals
 
-## 🏗️ Project Structure (Monorepo)
+## Project Structure (Monorepo)
 
 ```
 habit-tracker-app/
@@ -35,7 +45,7 @@ habit-tracker-app/
 └── README.md               # This file
 ```
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 - **Node.js** with **TypeScript**
@@ -49,9 +59,9 @@ habit-tracker-app/
 - **Axios** for API communication
 - **Jest** for testing
 
-## 🚀 Quick Start
+## Quick Start
 
-### ⚠️ IMPORTANT: Windows PowerShell Users
+### IMPORTANT: Windows PowerShell Users
 **PowerShell does NOT support `&&` operator!** Use separate commands or see `START-GUIDE.md` for detailed instructions.
 
 ### Start the Application (2 Steps):
@@ -75,7 +85,7 @@ npm start
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:5000
 
-📖 **For detailed startup instructions, see `START-GUIDE.md`**
+**For detailed startup instructions, see `START-GUIDE.md`**
 
 ## Overview
 The Habit Tracker App is a web application designed to help users track their habits effectively. Users can add, remove, and manage their habits, making it easier to stay on top of their goals.

@@ -5,8 +5,9 @@ let habits: any[] = [
   // No default habits - users start with a clean slate
 ];
 
-export async function getHabits() {
-  return habits.map(h => ({ 
+export async function getHabits(userId?: string) {
+  const filteredHabits = userId ? habits.filter(h => h.userId === userId) : habits;
+  return filteredHabits.map(h => ({ 
     ...h, 
     id: h.id,
     Name: h.name,
@@ -60,12 +61,18 @@ export async function createHabit(name: string, completedDate?: string, completi
 }
 
 export async function updateHabit(itemId: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
-  const habitIndex = habits.findIndex(h => h.id === itemId);
+  // Find habit by ID and ensure it belongs to the user (if userId provided)
+  const habitIndex = habits.findIndex(h => h.id === itemId && (!userId || h.userId === userId));
+  
   if (habitIndex === -1) {
-    throw new NotFoundError(`Item with ID ${itemId} not found`);
+    throw new NotFoundError(`Item with ID ${itemId} not found or access denied`);
   }
   if (name) {
     habits[habitIndex].name = name;
+    // CRITICAL FIX: Also update the fields object
+    if (!habits[habitIndex].fields) habits[habitIndex].fields = {};
+    habits[habitIndex].fields.Title = name;
+    habits[habitIndex].fields.Name = name;
   }
   if (completionsStr !== undefined) {
     let arr = completionsStr ? completionsStr.split(',').filter(Boolean) : [];
@@ -81,7 +88,9 @@ export async function updateHabit(itemId: string, name?: string, completionsStr?
   }
   if (expectedFrequency !== undefined) {
     habits[habitIndex].expectedFrequency = expectedFrequency;
-  }  return {
+  }
+  
+  return {
     id: habits[habitIndex].id,
     name: habits[habitIndex].name,
     completedDates: [...habits[habitIndex].completions], // Fix: use completions, not completedDates
@@ -99,9 +108,10 @@ export async function updateHabit(itemId: string, name?: string, completionsStr?
 export { habits };
 
 export async function deleteHabit(itemId: string, userId?: string) {
-  const habitIndex = habits.findIndex(h => h.id === itemId);
+  // Find habit by ID and ensure it belongs to the user (if userId provided)
+  const habitIndex = habits.findIndex(h => h.id === itemId && (!userId || h.userId === userId));
   if (habitIndex === -1) {
-    throw new NotFoundError(`Item with ID ${itemId} not found`);
+    throw new NotFoundError(`Item with ID ${itemId} not found or access denied`);
   }
   habits.splice(habitIndex, 1);
   return { success: true };

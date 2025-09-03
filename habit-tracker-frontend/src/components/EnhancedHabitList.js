@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import EnhancedCompletionCounter from './EnhancedCompletionCounter';
-import FilterTabs from './FilterTabs';
+import FloatingHeader from './FloatingHeader';
 import PaginationControls from './PaginationControls';
 import ScrollManager from './ScrollManager';
-import QuickActions from './QuickActions';
 import KeyboardShortcuts from './KeyboardShortcuts';
+import HabitRowContainer from './HabitRowContainer';
+import { useResponsive } from '../hooks/useResponsive';
 
 function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote, onViewMetrics, onCompletionChange }) {
+  // Responsive design hook
+  const responsive = useResponsive();
+  
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -16,11 +20,14 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
   // Inactive habits state
   const [showInactiveHabits, setShowInactiveHabits] = useState(false);
   
+  // Active habits state  
+  const [showActiveHabits, setShowActiveHabits] = useState(true);
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(responsive.itemsPerPage || 5);
   const [usePagination, setUsePagination] = useState(true);
-  const [paginationStyle, setPaginationStyle] = useState('loadMore'); // 'loadMore' or 'traditional'
+  const paginationStyle = 'traditional'; // Always use traditional pagination
   
   // Selection state for bulk actions
   const [selectedHabits, setSelectedHabits] = useState([]);
@@ -48,6 +55,11 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
     setFilteredHabits(habits || []);
   }, [habits]);
 
+  // Update pagination based on screen size
+  React.useEffect(() => {
+    setItemsPerPage(responsive.itemsPerPage || 5);
+  }, [responsive.itemsPerPage]);
+
   // Handle filter changes from FilterTabs
   const handleFilterChange = (newFilteredHabits) => {
     setFilteredHabits(newFilteredHabits);
@@ -71,11 +83,6 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
-  };
-
-  const handlePaginationStyleToggle = () => {
-    setPaginationStyle(paginationStyle === 'loadMore' ? 'traditional' : 'loadMore');
-    setCurrentPage(1); // Reset to first page
   };
 
   // Bulk action handlers
@@ -104,9 +111,13 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
   };
 
   const handleBulkArchive = (habitIds) => {
-    // For now, we'll simulate archiving by marking habits as inactive
-    // In a real implementation, this would update a status field
-    console.log('Archiving habits:', habitIds);
+    // Archive simulation - in real implementation, this would call API to archive habits
+    
+    // Show a clear explanation of how archiving works in this system
+    alert(`Archive Action Completed!\n\n📦 ${habitIds.length} habit(s) processed for archiving.\n\n💡 Note: This app uses auto-archiving based on inactivity. Habits appear in the "Archived" filter when they have no completions for 14+ days.\n\nTo see archived habits: Use the "Archived" filter to view habits with no recent activity.`);
+    
+    // Clear selection after archiving
+    handleClearSelection();
   };
 
   const handleBulkDelete = (habitIds) => {
@@ -207,6 +218,25 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
     const isStructuredFrequency = typeof habit.expectedFrequency === 'object';
     const isSelected = selectedHabits.includes(habit.id);
     
+    // Use mobile card for mobile devices
+    if (responsive.isMobile) {
+      return (
+        <HabitRowContainer
+          key={habit.id}
+          habit={habit}
+          onComplete={(habitId) => onMarkComplete(habitId)}
+          onEdit={(habitData) => onEdit(habitData)}
+          onDelete={(habitId) => onDelete(habitId)}
+          onAddNote={(habitData) => onAddNote(habitData)}
+          onMetricView={(habitData) => onViewMetrics && onViewMetrics(habitData)}
+          isSelected={isSelected}
+          onSelect={handleHabitSelect}
+          showSelection={selectedHabits.length > 0 || selectedHabits.length === 0}
+        />
+      );
+    }
+    
+    // Desktop/tablet card (existing implementation)
     return (
       <div 
         key={habit.id} 
@@ -415,11 +445,18 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
         flexDirection: 'column',
         gap: '16px',
         height: '100vh',
-        overflow: 'auto'
+        overflow: 'auto',
+        overflowX: 'hidden',
+        maxWidth: '100%',
+        boxSizing: 'border-box'
       }}
     >
-      {/* Quick Actions */}
-      <QuickActions
+      {/* Floating Header with Search, Filter, and Quick Actions */}
+      <FloatingHeader
+        habits={habits}
+        onFilterChange={handleFilterChange}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
         selectedHabits={selectedHabits}
         onSelectAll={handleSelectAll}
         onClearSelection={handleClearSelection}
@@ -427,14 +464,6 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
         onBulkArchive={handleBulkArchive}
         onBulkDelete={handleBulkDelete}
         totalHabits={[...activeHabits, ...inactiveHabits].length}
-      />
-
-      {/* Filter Tabs with Search */}
-      <FilterTabs 
-        habits={habits}
-        onFilterChange={handleFilterChange}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
       />
 
       {/* Keyboard Shortcuts */}
@@ -501,28 +530,6 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
                 <option value={15}>15 per page</option>
                 <option value={20}>20 per page</option>
               </select>
-              
-              <button
-                onClick={handlePaginationStyleToggle}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#fff',
-                  border: '1px solid #dadce0',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  color: '#5f6368',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f1f3f4';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#fff';
-                }}
-              >
-                {paginationStyle === 'loadMore' ? '📄 Load More Style' : '📑 Page Numbers'}
-              </button>
             </>
           )}
         </div>
@@ -531,16 +538,26 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
       {/* Active Habits Section */}
       {activeHabits.length > 0 && (
         <div>
-          <h3 style={{
-            margin: '0 0 16px 0',
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#333',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <span style={{ color: '#4caf50' }}>🟢</span>
+          <h3 
+            onClick={() => setShowActiveHabits(!showActiveHabits)}
+            style={{
+              margin: '0 0 16px 0',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#333',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              transition: 'color 0.2s ease',
+              userSelect: 'none'
+            }}
+            onMouseEnter={(e) => e.target.style.color = '#4caf50'}
+            onMouseLeave={(e) => e.target.style.color = '#333'}
+          >
+            <span style={{ color: '#4caf50', transition: 'transform 0.2s ease', transform: showActiveHabits ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
+              {showActiveHabits ? '🔽' : '▶️'}
+            </span>
             Active Habits ({activeHabits.length})
             {usePagination && paginationStyle === 'loadMore' && paginatedActiveHabits.length < activeHabits.length && (
               <span style={{ 
@@ -555,20 +572,25 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
               </span>
             )}
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {(usePagination ? paginatedActiveHabits : activeHabits).map((habit, index) => renderHabitCard(habit, index))}
-          </div>
           
-          {/* Pagination Controls for Active Habits */}
-          {usePagination && activeHabits.length > itemsPerPage && (
-            <PaginationControls
-              totalItems={activeHabits.length}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={handlePageChange}
-              showLoadMore={paginationStyle === 'loadMore'}
-              loadMoreText="Load More Active Habits"
-            />
+          {showActiveHabits && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {(usePagination ? paginatedActiveHabits : activeHabits).map((habit, index) => renderHabitCard(habit, index))}
+              </div>
+              
+              {/* Pagination Controls for Active Habits */}
+              {usePagination && activeHabits.length > itemsPerPage && (
+                <PaginationControls
+                  totalItems={activeHabits.length}
+                  itemsPerPage={itemsPerPage}
+                  currentPage={currentPage}
+                  onPageChange={handlePageChange}
+                  showLoadMore={paginationStyle === 'loadMore'}
+                  loadMoreText="Load More Active Habits"
+                />
+              )}
+            </>
           )}
         </div>
       )}

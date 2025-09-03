@@ -75,7 +75,7 @@ router.get('/', optionalAuth, habitController.getHabits);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticateToken, habitController.createHabit);
+router.post('/', optionalAuth, habitController.createHabit);
 
 /**
  * @swagger
@@ -125,7 +125,7 @@ router.post('/', authenticateToken, habitController.createHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', authenticateToken, habitController.updateHabit);
+router.put('/:id', optionalAuth, habitController.updateHabit);
 
 /**
  * @swagger

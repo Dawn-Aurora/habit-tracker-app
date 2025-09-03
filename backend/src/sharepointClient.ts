@@ -77,8 +77,6 @@ export async function updateHabit(itemId: string, name?: string, completedDatesS
     fields.Tags = tagsStr !== undefined ? tagsStr : (existingItem.fields.Tags || "");
     fields.Notes = notesStr !== undefined ? notesStr : (existingItem.fields.Notes || "[]");
     const item = { fields };
-    // Debug: Log what is being sent to SharePoint
-    console.log('Updating SharePoint item:', JSON.stringify({ itemId, fields }, null, 2));
     const result = await graphClient
       .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
       .patch(item);

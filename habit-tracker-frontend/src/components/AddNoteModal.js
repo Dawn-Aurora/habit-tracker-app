@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import api from '../api';
+import CustomDatePicker from './CustomDatePicker';
 
 function AddNoteModal({ habit, onClose, onNoteAdded }) {
   const [note, setNote] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -16,7 +18,7 @@ function AddNoteModal({ habit, onClose, onNoteAdded }) {
     try {
       const response = await api.post(`/habits/${habit.id}/note`, {
         text: note.trim(),
-        date: new Date().toISOString().slice(0, 10)
+        date: date
       });
 
       if (response.data.status === 'success') {
@@ -48,7 +50,8 @@ function AddNoteModal({ habit, onClose, onNoteAdded }) {
             </button>
           </div>
           
-          <div className="modern-card" style={{ marginBottom: '24px' }}>
+          <div className="modal-form-content">
+            <div className="modern-card" style={{ marginBottom: '24px' }}>
             <div className="modern-card-body">
               <p style={{ 
                 margin: 0, 
@@ -85,6 +88,21 @@ function AddNoteModal({ habit, onClose, onNoteAdded }) {
           )}
           
           <form onSubmit={handleSubmit}>
+            <div className="modern-form-group">
+              <label htmlFor="note-date" className="modern-label">
+                📅 Date
+              </label>
+              <CustomDatePicker
+                id="note-date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                disabled={loading}
+                min="2020-01-01"
+                max="2030-12-31"
+                required
+              />
+            </div>
+            
             <div className="modern-form-group">
               <label htmlFor="note-text" className="modern-label">
                 ✍️ Your Note
@@ -144,6 +162,7 @@ function AddNoteModal({ habit, onClose, onNoteAdded }) {
               </button>
             </div>
           </form>
+          </div>
         </div>
       </div>
     </div>

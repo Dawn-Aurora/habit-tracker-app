@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { useResponsive } from '../hooks/useResponsive';
+import '../styles/analytics-responsive.css';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -82,6 +84,7 @@ export const parseExpectedFrequency = (frequency) => {
 function AnalyticsDashboard({ habits, onClose }) {
   const [timeRange, setTimeRange] = useState('30'); // 7, 30, 90 days
   const [viewType, setViewType] = useState('overview'); // overview, habits, streaks
+  const responsive = useResponsive();
 
   // Export functionality
   const exportToCSV = () => {
@@ -311,71 +314,87 @@ function AnalyticsDashboard({ habits, onClose }) {
     ]
   };
 
+  // Responsive chart options
+  const { isMobile } = useResponsive();
+
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: isMobile ? 'bottom' : 'top',
+        labels: {
+          boxWidth: isMobile ? 10 : 12,
+          font: {
+            size: isMobile ? 10 : 12
+          }
+        }
       },
+      tooltip: {
+        titleFont: {
+          size: isMobile ? 10 : 12
+        },
+        bodyFont: {
+          size: isMobile ? 10 : 12
+        }
+      }
     },
     scales: {
       y: {
-        beginAtZero: true
+        beginAtZero: true,
+        ticks: {
+          font: {
+            size: isMobile ? 8 : 10
+          }
+        }
+      },
+      x: {
+        ticks: {
+          font: {
+            size: isMobile ? 8 : 10
+          },
+          maxRotation: isMobile ? 45 : 0
+        }
       }
     }
   };
 
   const doughnutOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'right',
+        position: isMobile ? 'bottom' : 'right',
+        labels: {
+          boxWidth: isMobile ? 10 : 12,
+          font: {
+            size: isMobile ? 10 : 12
+          }
+        }
       },
-    },
+      tooltip: {
+        titleFont: {
+          size: isMobile ? 10 : 12
+        },
+        bodyFont: {
+          size: isMobile ? 10 : 12
+        }
+      }
+    }
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        maxWidth: '95vw',
-        maxHeight: '95vh',
-        overflow: 'auto',
-        width: '1000px'
-      }}>
+    <div className="analytics-dashboard">
+      <div className="analytics-content">
         {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px',
-          borderBottom: '2px solid #f0f0f0',
-          paddingBottom: '16px'
-        }}>
-          <h2 style={{ margin: 0, color: '#333' }}>📊 Analytics Dashboard</h2>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="analytics-header">
+          <h2 className="analytics-title">📊 Analytics Dashboard</h2>
+          <div className="analytics-controls">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <select 
                 value={timeRange} 
                 onChange={(e) => setTimeRange(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd'
-                }}
+                className="analytics-select"
               >
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
@@ -405,123 +424,67 @@ function AnalyticsDashboard({ habits, onClose }) {
                 ?
               </div>
             </div>
-            <button 
-              onClick={exportToCSV}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-            >
-              📊 Export CSV
-            </button>
-            <button 
-              onClick={exportToJSON}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#2196f3',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-            >
-              💾 Export JSON
-            </button>
+            {!responsive.isMobile && (
+              <>
+                <button 
+                  onClick={exportToCSV}
+                  className="analytics-btn analytics-btn-export"
+                >
+                  📊 Export CSV
+                </button>
+                <button 
+                  onClick={exportToJSON}
+                  className="analytics-btn analytics-btn-export"
+                  style={{ backgroundColor: '#2196f3' }}
+                >
+                  💾 Export JSON
+                </button>
+              </>
+            )}
             <button 
               onClick={onClose}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
+              className="analytics-btn analytics-btn-close"
             >
-              ✕ Close
+              {responsive.isMobile ? '✕' : '✕ Close'}
             </button>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '32px'
-        }}>
-          <div style={{
-            padding: '20px',
-            backgroundColor: '#e3f2fd',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#1976d2' }}>
+        <div className="analytics-stats">
+          <div className="analytics-stat-card">
+            <div className="analytics-stat-value" style={{ color: '#1976d2' }}>
               {analytics.totalHabits}
             </div>
-            <div style={{ color: '#666' }}>Total Habits</div>
+            <div className="analytics-stat-label">Total Habits</div>
           </div>
-          
-          <div style={{
-            padding: '20px',
-            backgroundColor: '#e8f5e8',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#4caf50' }}>
+          <div className="analytics-stat-card">
+            <div className="analytics-stat-value" style={{ color: '#4caf50' }}>
               {analytics.totalCompletions}
             </div>
-            <div style={{ color: '#666' }}>Completions ({timeRange} days)</div>
+            <div className="analytics-stat-label">Completions ({timeRange} days)</div>
           </div>
-          
-          <div style={{
-            padding: '20px',
-            backgroundColor: '#fff3e0',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#ff9800' }}>
+          <div className="analytics-stat-card">
+            <div className="analytics-stat-value" style={{ color: '#ff9800' }}>
               {analytics.avgCompletionRate}%
             </div>
-            <div style={{ color: '#666' }}>Avg Completion Rate</div>
+            <div className="analytics-stat-label">Avg Completion Rate</div>
           </div>
-          
-          <div style={{
-            padding: '20px',
-            backgroundColor: '#fce4ec',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#e91e63' }}>
+          <div className="analytics-stat-card">
+            <div className="analytics-stat-value" style={{ color: '#e91e63' }}>
               {analytics.longestStreak}
             </div>
-            <div style={{ color: '#666' }}>Longest Streak</div>
+            <div className="analytics-stat-label">Longest Streak</div>
           </div>
         </div>
 
         {/* View Type Selector */}
-        <div style={{
-          marginBottom: '24px',
-          display: 'flex',
-          gap: '8px'
-        }}>
+        <div className="analytics-tabs">
           {['overview', 'habits', 'streaks', 'categories'].map(type => (
             <button
               key={type}
               onClick={() => setViewType(type)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: viewType === type ? '#2196f3' : '#f5f5f5',
-                color: viewType === type ? 'white' : '#333',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                textTransform: 'capitalize'
-              }}
+              className={`analytics-tab ${viewType === type ? 'active' : ''}`}
             >
               {type}
             </button>
@@ -530,30 +493,32 @@ function AnalyticsDashboard({ habits, onClose }) {
 
         {/* Chart Views */}
         {viewType === 'overview' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            <div>
-              <h3 style={{ marginBottom: '16px' }}>📈 Progress Over Time</h3>
-              <div style={{ height: '300px' }}>
-                <Line data={progressChartData} options={chartOptions} />
+          <div className={`analytics-grid ${responsive.width <= 720 ? 'overview-sections' : ''}`}>
+            <div className={responsive.width <= 720 ? 'overview-top-section' : 'analytics-grid'} style={responsive.width > 720 ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' } : {}}>
+              <div className="analytics-chart-container">
+                <h3 className="analytics-chart-title">📈 Progress Over Time</h3>
+                <div style={{ height: responsive.isMobile ? '250px' : '300px' }}>
+                  <Line data={progressChartData} options={chartOptions} />
+                </div>
               </div>
-            </div>
-            
-            <div>
-              <h3 style={{ marginBottom: '16px' }}>🎯 Category Breakdown</h3>
-              <div style={{ height: '300px' }}>
-                {analytics.categoryData.length > 0 ? (
-                  <Doughnut data={categoryData} options={doughnutOptions} />
-                ) : (
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    height: '100%',
-                    color: '#666'
-                  }}>
-                    No category data available
-                  </div>
-                )}
+              
+              <div className="analytics-chart-container">
+                <h3 className="analytics-chart-title">🎯 Category Breakdown</h3>
+                <div style={{ height: responsive.isMobile ? '250px' : '300px' }}>
+                  {analytics.categoryData.length > 0 ? (
+                    <Doughnut data={categoryData} options={doughnutOptions} />
+                  ) : (
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      height: '100%',
+                      color: '#666'
+                    }}>
+                      No category data available
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -581,35 +546,38 @@ function AnalyticsDashboard({ habits, onClose }) {
             {/* Habit Details Table */}
             <div style={{ marginTop: '24px' }}>
               <h4>📋 Detailed Habit Statistics</h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '12px' }}>
-                <thead>
-                  <tr style={{ backgroundColor: '#f5f5f5' }}>
-                    <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Habit</th>
-                    <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Completions</th>
-                    <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Rate</th>
-                    <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Current Streak</th>
-                    <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Max Streak</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analytics.habitData.map((habit, index) => (
-                    <tr key={index}>
-                      <td style={{ padding: '12px', border: '1px solid #ddd' }}>{habit.name}</td>
-                      <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>{habit.completions}</td>
-                      <td style={{ 
-                        padding: '12px', 
-                        textAlign: 'center', 
-                        border: '1px solid #ddd',
-                        color: habit.completionRate >= 70 ? '#4caf50' : habit.completionRate >= 40 ? '#ff9800' : '#f44336'
-                      }}>
-                        {habit.completionRate}%
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>{habit.currentStreak}</td>
-                      <td style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>{habit.maxStreak}</td>
+              <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '480px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f5f5f5' }}>
+                      <th style={{ padding: '8px', textAlign: 'left', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>Habit</th>
+                      <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>Completions</th>
+                      <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>Rate</th>
+                      <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>Current Streak</th>
+                      <th style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>Max Streak</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {analytics.habitData.map((habit, index) => (
+                      <tr key={index}>
+                        <td style={{ padding: '8px', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>{habit.name}</td>
+                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>{habit.completions}</td>
+                        <td style={{ 
+                          padding: '8px', 
+                          textAlign: 'center', 
+                          border: '1px solid #ddd',
+                          fontSize: responsive.isMobile ? '0.8rem' : '1rem',
+                          color: habit.completionRate >= 70 ? '#4caf50' : habit.completionRate >= 40 ? '#ff9800' : '#f44336'
+                        }}>
+                          {habit.completionRate}%
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>{habit.currentStreak}</td>
+                        <td style={{ padding: '8px', textAlign: 'center', border: '1px solid #ddd', fontSize: responsive.isMobile ? '0.8rem' : '1rem' }}>{habit.maxStreak}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -631,12 +599,12 @@ function AnalyticsDashboard({ habits, onClose }) {
         )}
 
         {viewType === 'categories' && (
-          <div>
-            <h3 style={{ marginBottom: '16px' }}>📂 Category Analysis</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              <div>
-                <h4>Category Distribution</h4>
-                <div style={{ height: '300px' }}>
+          <div className="analytics-section">
+            <h3 className="analytics-section-title">📂 Category Analysis</h3>
+            <div className={`analytics-grid ${responsive.width <= 600 ? 'overview-sections' : ''}`} style={responsive.width > 600 ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' } : {}}>
+              <div className="analytics-chart-container">
+                <h4 className="analytics-chart-title">Category Distribution</h4>
+                <div style={{ height: responsive.isMobile ? '250px' : '300px' }}>
                   {analytics.categoryData.length > 0 ? (
                     <Doughnut data={categoryData} options={doughnutOptions} />
                   ) : (
@@ -653,26 +621,13 @@ function AnalyticsDashboard({ habits, onClose }) {
                 </div>
               </div>
               
-              <div>
-                <h4>Category Performance</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="analytics-chart-container">
+                <h4 className="analytics-chart-title">Category Performance</h4>
+                <div className="category-performance">
                   {analytics.categoryData.map((category, index) => (
-                    <div key={index} style={{
-                      padding: '16px',
-                      backgroundColor: '#f9f9f9',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <span style={{ fontWeight: 'bold' }}>{category.name}</span>
-                      <span style={{
-                        backgroundColor: '#2196f3',
-                        color: 'white',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '0.9em'
-                      }}>
+                    <div key={index} className="category-item">
+                      <span className="category-name">{category.name}</span>
+                      <span className="category-badge">
                         {category.count} completions
                       </span>
                     </div>

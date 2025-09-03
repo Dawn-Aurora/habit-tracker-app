@@ -51,15 +51,14 @@ const QuickActions = ({
   return (
     <>
       <div style={{
-        position: 'sticky',
-        top: '0',
-        zIndex: 10,
+        position: 'relative',
         backgroundColor: '#fff',
         borderBottom: '1px solid #e8eaed',
         padding: '12px 16px',
-        borderRadius: '8px 8px 0 0',
+        borderRadius: '8px',
         boxShadow: hasSelection ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        marginBottom: '16px'
       }}>
         <div style={{
           display: 'flex',
@@ -163,7 +162,9 @@ const QuickActions = ({
             borderRadius: '8px',
             display: 'flex',
             gap: '8px',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            position: 'relative',
+            zIndex: 100
           }}>
             <button
               onClick={() => handleBulkAction('complete', 'mark as completed today')}

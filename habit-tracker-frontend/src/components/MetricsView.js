@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import './MetricsView.css';
 
 // Helper function to parse expected frequency
 const parseExpectedFrequency = (frequency) => {
@@ -47,15 +48,39 @@ const getHeatmapColor = (completions, targetCount) => {
   // Calculate percentage of completion
   const percentage = (completions / targetCount) * 100;
   
-  // Percentage-based color scheme
-  if (percentage >= 100) return '#216e39'; // Darkest green (100% or more)
-  if (percentage >= 75) return '#30a14e';  // Dark green (75-99%)
-  if (percentage >= 50) return '#40c463';  // Medium green (50-74%)
-  if (percentage >= 25) return '#9be9a8';  // Light green (25-49%)
-  if (percentage >= 1) return '#d2f8d2';   // Very light green (1-24%)
+  // New 4-tier color system
+  if (percentage >= 100) return '#22c55e';  // Green (100%)
+  if (percentage >= 50) return '#f97316';   // Orange (50%-99%)
+  if (percentage >= 1) return '#eab308';    // Yellow (1%-49%)
   
   // Fallback (shouldn't reach here)
-  return '#ebedf0';
+  return '#ebedf0'; // Gray
+};
+
+// Helper function to get background color for completion percentage
+const getCompletionBackgroundColor = (completions, targetCount) => {
+  if (completions === 0) return '#f9fafb'; // Light gray for no activity
+  
+  const percentage = (completions / targetCount) * 100;
+  
+  if (percentage >= 100) return '#dcfce7';  // Light green (100%)
+  if (percentage >= 50) return '#fed7aa';   // Light orange (50%-99%)
+  if (percentage >= 1) return '#fef3c7';    // Light yellow (1%-49%)
+  
+  return '#f9fafb'; // Light gray fallback
+};
+
+// Helper function to get text color for completion percentage
+const getCompletionTextColor = (completions, targetCount) => {
+  if (completions === 0) return '#6b7280'; // Gray for no activity
+  
+  const percentage = (completions / targetCount) * 100;
+  
+  if (percentage >= 100) return '#059669';  // Dark green (100%) - keep existing since it's darker
+  if (percentage >= 50) return '#ea580c';   // Dark orange (50%-99%)
+  if (percentage >= 1) return '#ca8a04';    // Dark yellow (1%-49%)
+  
+  return '#6b7280'; // Gray fallback
 };
 
 // Helper function to generate GitHub-style yearly heatmap
@@ -199,8 +224,10 @@ function MetricsView({ habits, selectedHabit, onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
   
-  // Navigation functions
+  // Navigation functions (for future use)
+  // eslint-disable-next-line no-unused-vars
   const navigateMonth = (direction) => {
     const newMonth = new Date(selectedMonth);
     newMonth.setMonth(newMonth.getMonth() + direction);
@@ -419,13 +446,41 @@ function MetricsView({ habits, selectedHabit, onClose }) {
             hourCounts[a[0]] > hourCounts[b[0]] ? a : b, ['0', 0])[0] : null;
         
         // Consistency score
+        let consistencyScore;
+        
+        // Check if this is an annual habit
+        const isAnnualHabit = habit.expectedFrequency && 
+          typeof habit.expectedFrequency === 'object' && 
+          habit.expectedFrequency.period === 'year';
+        
+        if (isAnnualHabit) {
+          // For annual habits, consistency score = (completions this year / expected per year) * 100
+          const now = new Date();
+          const startOfYear = new Date(now.getFullYear(), 0, 1);
+          const endOfYear = new Date(now.getFullYear(), 11, 31);
+          endOfYear.setHours(23, 59, 59, 999);
+          
+          const yearCompletions = completedDates.filter(date => {
+            const d = new Date(date);
+            return d >= startOfYear && d <= endOfYear;
+          }).length;
+          
+          const expectedPerYear = habit.expectedFrequency.count || 1;
+          consistencyScore = Math.min(Math.round((yearCompletions / expectedPerYear) * 100), 100);
+        } else {
+          // Original logic for daily/weekly/monthly habits
+          const totalDays = Math.max(1, Math.floor((now - new Date(completedDates[0] || now)) / (1000 * 60 * 60 * 24)) + 1);
+          const activeDays = new Set(completedDates.map(d => d.slice(0, 10))).size;
+          consistencyScore = Math.min(
+            Math.round((currentStreak / 30) * 50) + 
+            Math.round((activeDays / totalDays) * 50),
+            100
+          );
+        }
+        
+        // Calculate totalDays and activeDays for metrics
         const totalDays = Math.max(1, Math.floor((now - new Date(completedDates[0] || now)) / (1000 * 60 * 60 * 24)) + 1);
         const activeDays = new Set(completedDates.map(d => d.slice(0, 10))).size;
-        const consistencyScore = Math.min(
-          Math.round((currentStreak / 30) * 50) + 
-          Math.round((activeDays / totalDays) * 50),
-          100
-        );
         
         return {
           currentStreak,
@@ -529,7 +584,8 @@ function MetricsView({ habits, selectedHabit, onClose }) {
             transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            lineHeight: 1
           }}
           onMouseEnter={(e) => {
             e.target.style.backgroundColor = '#d32f2f';
@@ -595,70 +651,93 @@ function MetricsView({ habits, selectedHabit, onClose }) {
               <div className="modern-card-body">
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+                  gridTemplateColumns: (() => {
+                    // Check if this is an annual habit
+                    const isAnnualHabit = selectedHabit.expectedFrequency && 
+                      typeof selectedHabit.expectedFrequency === 'object' && 
+                      selectedHabit.expectedFrequency.period === 'year';
+                    
+                    // For annual habits, show only 2 columns (Consistency Score + Total Completions)
+                    return isAnnualHabit ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(120px, 1fr))';
+                  })(), 
                   gap: '16px',
                   marginBottom: '16px'
                 }}>
-                  <div style={{ 
-                    textAlign: 'center', 
-                    padding: '12px', 
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                  >
-                    <div style={{ 
-                      fontSize: '24px', 
-                      fontWeight: 'bold',
-                      color: metrics.weeklySuccessRate >= 80 ? '#059669' : 
-                            metrics.weeklySuccessRate >= 60 ? '#d97706' : '#dc2626'
-                    }}>
-                      {metrics.weeklySuccessRate}%
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                      7-Day Success
-                    </div>
-                  </div>
-                  <div style={{ 
-                    textAlign: 'center', 
-                    padding: '12px', 
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                  >
-                    <div style={{ 
-                      fontSize: '24px', 
-                      fontWeight: 'bold',
-                      color: metrics.monthlySuccessRate >= 80 ? '#059669' : 
-                            metrics.monthlySuccessRate >= 60 ? '#d97706' : '#dc2626'
-                    }}>
-                      {metrics.monthlySuccessRate}%
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                      30-Day Success
-                    </div>
-                  </div>
+                  {(() => {
+                    // Check if this is an annual habit
+                    const isAnnualHabit = selectedHabit.expectedFrequency && 
+                      typeof selectedHabit.expectedFrequency === 'object' && 
+                      selectedHabit.expectedFrequency.period === 'year';
+                    
+                    return (
+                      <>
+                        {/* Show 7-day success only for non-annual habits */}
+                        {!isAnnualHabit && (
+                          <div style={{ 
+                            textAlign: 'center', 
+                            padding: '12px', 
+                            backgroundColor: '#f8fafc',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                          >
+                            <div style={{ 
+                              fontSize: '24px', 
+                              fontWeight: 'bold',
+                              color: metrics.weeklySuccessRate >= 80 ? '#059669' : 
+                                    metrics.weeklySuccessRate >= 60 ? '#d97706' : '#dc2626'
+                            }}>
+                              {metrics.weeklySuccessRate}%
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                              7-Day Success
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Show 30-day success only for non-annual habits */}
+                        {!isAnnualHabit && (
+                          <div style={{ 
+                            textAlign: 'center', 
+                            padding: '12px', 
+                            backgroundColor: '#f8fafc',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                          >
+                            <div style={{ 
+                              fontSize: '24px', 
+                              fontWeight: 'bold',
+                              color: metrics.monthlySuccessRate >= 80 ? '#059669' : 
+                                    metrics.monthlySuccessRate >= 60 ? '#d97706' : '#dc2626'
+                            }}>
+                              {metrics.monthlySuccessRate}%
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                              30-Day Success
+                            </div>
+                          </div>
+                        )}
                   <div style={{ 
                     textAlign: 'center', 
                     padding: '12px', 
@@ -718,6 +797,9 @@ function MetricsView({ habits, selectedHabit, onClose }) {
                       Most Active Hour
                     </div>
                   </div>
+                      </>
+                    );
+                  })()} 
                 </div>
                 <div style={{ 
                   display: 'flex', 
@@ -727,11 +809,11 @@ function MetricsView({ habits, selectedHabit, onClose }) {
                   color: '#6b7280'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ width: '8px', height: '8px', backgroundColor: '#059669', borderRadius: '50%' }}></div>
+                    <div style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%' }}></div>
                     <span>Excellent (80%+)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ width: '8px', height: '8px', backgroundColor: '#d97706', borderRadius: '50%' }}></div>
+                    <div style={{ width: '8px', height: '8px', backgroundColor: '#f97316', borderRadius: '50%' }}></div>
                     <span>Good (60-79%)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -759,7 +841,6 @@ function MetricsView({ habits, selectedHabit, onClose }) {
               </div>
             </div>
 
-            {/* Metrics Grid */}
             {/* Metrics Grid */}
             <div style={{ 
               display: 'grid', 
@@ -790,12 +871,27 @@ function MetricsView({ habits, selectedHabit, onClose }) {
               </div>
             </div>
 
-            {/* Weekly Progress Chart */}
-            <div className="modern-card" style={{ marginBottom: '24px' }}>
-              <div className="modern-card-header">
-                <h4 className="modern-card-title">📈 Weekly Progress Trend</h4>
-              </div>
-              <div className="modern-card-body">
+            {/* Weekly Progress - Horizontal Scroll Bar (Hide for annual and monthly habits) */}
+            {(() => {
+              // Check if this is an annual or monthly habit
+              const isAnnualHabit = selectedHabit.expectedFrequency && 
+                typeof selectedHabit.expectedFrequency === 'object' && 
+                selectedHabit.expectedFrequency.period === 'year';
+              
+              const isMonthlyHabit = selectedHabit.expectedFrequency && 
+                typeof selectedHabit.expectedFrequency === 'object' && 
+                selectedHabit.expectedFrequency.period === 'month';
+              
+              if (isAnnualHabit || isMonthlyHabit) {
+                return null; // Don't show weekly progress for annual or monthly habits
+              }
+              
+              return (
+                <div className="modern-card" style={{ marginBottom: '24px' }}>
+                  <div className="modern-card-header">
+                    <h4 className="modern-card-title">📈 Weekly Progress</h4>
+                  </div>
+                  <div className="modern-card-body">
                 {(() => {
                   // Generate last 7 days data
                   const weeklyData = [];
@@ -808,67 +904,90 @@ function MetricsView({ habits, selectedHabit, onClose }) {
                     const dateStr = date.toISOString().slice(0, 10);
                     const completions = completedDates.filter(cd => cd.slice(0, 10) === dateStr).length;
                     
+                    // Calculate target for this day
+                    let dailyTarget = 1;
+                    if (selectedHabit.expectedFrequency && typeof selectedHabit.expectedFrequency === 'object') {
+                      const { count, period } = selectedHabit.expectedFrequency;
+                      if (period === 'day') dailyTarget = count;
+                      if (period === 'week') dailyTarget = Math.ceil(count / 7);
+                      if (period === 'month') dailyTarget = Math.ceil(count / 30);
+                    }
+                    
+                    const percentage = dailyTarget > 0 ? Math.min((completions / dailyTarget) * 100, 100) : 0;
+                    let status;
+                    if (percentage >= 100) {
+                      status = 'completed'; // Green (100%)
+                    } else if (percentage >= 50) {
+                      status = 'high-partial'; // Orange (50%-99%)
+                    } else if (percentage >= 1) {
+                      status = 'low-partial'; // Yellow (1%-49%)
+                    } else {
+                      status = 'empty'; // Gray (0%)
+                    }
+                    
                     weeklyData.push({
                       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
                       date: dateStr,
                       completions: completions,
-                      isToday: i === 0
+                      targetCount: dailyTarget,
+                      percentage: percentage,
+                      isToday: i === 0,
+                      status: status
                     });
                   }
                   
-                  const maxCompletions = Math.max(...weeklyData.map(d => d.completions), 1);
+                  // Calculate summary
+                  const completedDays = weeklyData.filter(d => d.status === 'completed').length;
+                  const totalActions = weeklyData.reduce((sum, d) => sum + d.completions, 0);
+                  const expectedActions = weeklyData.reduce((sum, d) => sum + d.targetCount, 0);
                   
                   return (
-                    <div style={{ display: 'flex', alignItems: 'end', gap: '8px', padding: '16px' }}>
-                      {weeklyData.map((day, index) => (
-                        <div key={index} style={{ 
-                          flex: 1, 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            fontWeight: '500',
-                            color: day.isToday ? '#3b82f6' : '#6b7280'
-                          }}>
-                            {day.completions}
-                          </div>
-                          <div style={{
-                            width: '24px',
-                            height: `${Math.max((day.completions / maxCompletions) * 60, 4)}px`,
-                            backgroundColor: day.completions > 0 
-                              ? (day.isToday ? '#3b82f6' : '#10b981')
-                              : '#e5e7eb',
-                            borderRadius: '4px',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer'
-                          }}
-                          title={`${day.day}: ${day.completions} / ${day.targetCount} times (${Math.round(day.percentage)}%)`}
-                          onMouseEnter={(e) => {
-                            e.target.style.transform = 'scale(1.1)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.transform = 'scale(1)';
-                            e.target.style.boxShadow = 'none';
-                          }}
-                          />
-                          <div style={{ 
-                            fontSize: '11px', 
-                            color: day.isToday ? '#3b82f6' : '#9ca3af',
-                            fontWeight: day.isToday ? 'bold' : 'normal'
-                          }}>
-                            {day.day}
-                          </div>
+                    <div>
+                      {/* Compact Summary */}
+                      <div style={{ 
+                        textAlign: 'center', 
+                        marginBottom: '16px',
+                        padding: '12px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '4px' }}>
+                          ✅ {completedDays} of 7 days completed
                         </div>
-                      ))}
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          {totalActions} of {expectedActions} actions done this week
+                        </div>
+                      </div>
+                      
+                      {/* Horizontal Scroll Bar */}
+                      <div className="weekly-progress-mobile">
+                        {weeklyData.map((day, index) => (
+                          <div 
+                            key={index} 
+                            className={`weekly-day-card ${day.status} ${day.isToday ? 'today' : ''}`}
+                            title={`${day.day}: ${day.completions}/${day.targetCount} (${Math.round(day.percentage)}%)`}
+                          >
+                            <div className="weekly-day-label">{day.day}</div>
+                            <div className="weekly-day-count">
+                              {day.completions > 0 ? `${day.completions}×` : '0'}
+                            </div>
+                            <div className="weekly-day-progress">
+                              <div 
+                                className="weekly-day-progress-fill"
+                                style={{ width: `${day.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   );
                 })()}
               </div>
             </div>
+              );
+            })()} 
 
             {/* Dynamic Period Progress */}
             <div className="modern-card" style={{ marginBottom: '24px' }}>
@@ -922,423 +1041,233 @@ function MetricsView({ habits, selectedHabit, onClose }) {
               </div>
             </div>
 
-            {/* Calendar View */}
+            {/* Calendar View - Mobile Optimized */}
             {(() => {
+              // eslint-disable-next-line no-unused-vars
               const calendarData = generateCalendarData(
                 selectedHabit.completedDates || [], 
                 selectedHabit.expectedFrequency,
                 selectedHabit.expectedFrequency?.period === 'year' ? null : selectedMonth,
-                selectedHabit  // Pass the habit for target calculation
+                selectedHabit
               );
               
               return (
-                <div className="modern-card" style={{ 
-                  marginBottom: '24px',
-                  animation: 'slideIn 0.5s ease-out'
-                }}>
-                  <div className="modern-card-header">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h4 className="modern-card-title">
-                        📅 {calendarData.type === 'heatmap' ? 'Activity Heatmap - GitHub Style' : `Calendar View - ${calendarData.monthName || 'Current Month'}`}
-                      </h4>
-                      
-                      {/* Navigation buttons */}
-                      {calendarData.type !== 'heatmap' && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={() => navigateMonth(-1)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#f3f4f6',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: '500',
-                              color: '#374151',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#e5e7eb';
-                              e.target.style.transform = 'translateY(-1px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#f3f4f6';
-                              e.target.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            ← Previous
-                          </button>
-                          <button
-                            onClick={() => setSelectedMonth(new Date())}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#3b82f6',
-                              border: '1px solid #3b82f6',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: '500',
-                              color: '#ffffff',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#2563eb';
-                              e.target.style.transform = 'translateY(-1px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#3b82f6';
-                              e.target.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            Today
-                          </button>
-                          <button
-                            onClick={() => navigateMonth(1)}
-                            style={{
-                              padding: '8px 12px',
-                              backgroundColor: '#f3f4f6',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: '500',
-                              color: '#374151',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#e5e7eb';
-                              e.target.style.transform = 'translateY(-1px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#f3f4f6';
-                              e.target.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            Next →
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                <div className="calendar-mobile-container">
+                  <div 
+                    className={`calendar-toggle ${showCalendar ? 'expanded' : ''}`}
+                    onClick={() => setShowCalendar(!showCalendar)}
+                  >
+                    <h4>📅 Calendar View</h4>
+                    <span style={{ 
+                      fontSize: '18px', 
+                      transform: showCalendar ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s ease'
+                    }}>
+                      ▼
+                    </span>
                   </div>
-                  <div className="modern-card-body">
-                    {calendarData.type === 'heatmap' ? (
-                      // GitHub-style yearly heatmap
-                      <div>
-                        <div style={{ 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          gap: '4px',
-                          marginBottom: '16px'
-                        }}>
-                          {/* Month labels */}
-                          <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: 'repeat(53, 1fr)', 
-                            gap: '2px',
-                            fontSize: '12px',
-                            color: '#6b7280',
-                            marginBottom: '8px'
-                          }}>
-                            {calendarData.data.map((week, weekIndex) => (
-                              <div key={weekIndex} style={{ textAlign: 'center' }}>
-                                {weekIndex % 4 === 0 && week[0] && week[0].fullDate.getDate() <= 7 ? 
-                                  week[0].fullDate.toLocaleDateString('en-US', { month: 'short' }) : ''}
-                              </div>
-                            ))}
-                          </div>
-                          
-                          {/* Day labels */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', color: '#6b7280', marginRight: '8px' }}>
-                              <div style={{ height: '12px', lineHeight: '12px' }}>Mon</div>
-                              <div style={{ height: '12px', lineHeight: '12px' }}></div>
-                              <div style={{ height: '12px', lineHeight: '12px' }}>Wed</div>
-                              <div style={{ height: '12px', lineHeight: '12px' }}></div>
-                              <div style={{ height: '12px', lineHeight: '12px' }}>Fri</div>
-                              <div style={{ height: '12px', lineHeight: '12px' }}></div>
-                              <div style={{ height: '12px', lineHeight: '12px' }}>Sun</div>
-                            </div>
-                            
-                            {/* Heatmap grid */}
-                            <div style={{ 
-                              display: 'grid', 
-                              gridTemplateColumns: 'repeat(53, 1fr)', 
-                              gap: '2px',
-                              flex: 1
-                            }}>
-                              {calendarData.data.map((week, weekIndex) => (
-                                <div key={weekIndex} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                  {week.map((day, dayIndex) => (
-                                    <div
-                                      key={`${weekIndex}-${dayIndex}`}
-                                      style={{
-                                        width: '12px',
-                                        height: '12px',
-                                        backgroundColor: day.color,
-                                        border: day.isToday ? '2px solid #3b82f6' : '1px solid rgba(0,0,0,0.1)',
-                                        borderRadius: '2px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        position: 'relative'
-                                      }}
-                                      title={`${day.fullDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}: ${day.completions} / ${day.targetCount} times (${Math.round(day.percentage)}%)`}
-                                      onMouseEnter={(e) => {
-                                        e.target.style.transform = 'scale(1.5)';
-                                        e.target.style.zIndex = '10';
-                                        e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.target.style.transform = 'scale(1)';
-                                        e.target.style.zIndex = '1';
-                                        e.target.style.boxShadow = 'none';
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+                  
+                  <div className={`calendar-content ${showCalendar ? 'expanded' : 'collapsed'}`}>
+                    {/* Calendar Header - Month View Only */}
+                    <div className="calendar-header-mobile">
+                      <div className="calendar-month-nav">
+                        <button 
+                          className="calendar-nav-btn"
+                          onClick={() => {
+                            const newDate = new Date(selectedMonth);
+                            newDate.setMonth(newDate.getMonth() - 1);
+                            setSelectedMonth(newDate);
+                          }}
+                        >
+                          ◀
+                        </button>
+                        <div className="calendar-month-year">
+                          {selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </div>
-                        
-                        {/* Heatmap legend */}
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          fontSize: '12px',
-                          color: '#6b7280',
-                          marginTop: '16px',
-                          padding: '12px',
-                          backgroundColor: '#f8fafc',
-                          borderRadius: '8px'
-                        }}>
-                          <div>
-                            <strong>{calendarData.totalCompletions}</strong> completions in the last year
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span>0%</span>
-                            <div style={{ display: 'flex', gap: '2px' }}>
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#ebedf0', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#d2f8d2', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#9be9a8', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#40c463', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#30a14e', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#216e39', borderRadius: '2px' }} />
-                            </div>
-                            <span>100%+</span>
-                          </div>
-                        </div>
+                        <button 
+                          className="calendar-nav-btn"
+                          onClick={() => {
+                            const newDate = new Date(selectedMonth);
+                            newDate.setMonth(newDate.getMonth() + 1);
+                            setSelectedMonth(newDate);
+                          }}
+                        >
+                          ▶
+                        </button>
                       </div>
-                    ) : calendarData.type === 'year' ? (
-                      // Yearly view - 12 months grid
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(4, 1fr)', 
-                        gap: '12px' 
-                      }}>
-                        {calendarData.data.map((month, index) => (
-                          <div
-                            key={index}
-                            style={{
-                              padding: '16px',
-                              textAlign: 'center',
-                              borderRadius: '10px',
-                              border: '2px solid #e5e7eb',
-                              backgroundColor: month.hasCompletion ? '#dcfce7' : '#f9fafb',
-                              borderColor: month.hasCompletion ? '#10b981' : '#e5e7eb',
-                              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                              cursor: 'pointer',
-                              transform: 'scale(1)',
-                              boxShadow: month.hasCompletion ? '0 4px 12px rgba(16, 185, 129, 0.15)' : 'none'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.transform = 'scale(1.05)';
-                              e.target.style.boxShadow = month.hasCompletion 
-                                ? '0 8px 24px rgba(16, 185, 129, 0.25)' 
-                                : '0 4px 12px rgba(0, 0, 0, 0.1)';
-                              e.target.style.backgroundColor = month.hasCompletion 
-                                ? '#bbf7d0' 
-                                : '#f8fafc';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.transform = 'scale(1)';
-                              e.target.style.boxShadow = month.hasCompletion 
-                                ? '0 4px 12px rgba(16, 185, 129, 0.15)' 
-                                : 'none';
-                              e.target.style.backgroundColor = month.hasCompletion 
-                                ? '#dcfce7' 
-                                : '#f9fafb';
-                            }}
-                          >
-                            <div style={{ 
-                              fontSize: '14px', 
-                              fontWeight: 'bold', 
-                              color: month.hasCompletion ? '#065f46' : '#6b7280',
-                              marginBottom: '4px'
-                            }}>
-                              {month.name}
-                            </div>
-                            {month.hasCompletion && (
-                              <div style={{
-                                fontSize: '12px',
-                                color: '#10b981',
-                                fontWeight: '500'
-                              }}>
-                                {month.completions} ✓
-                              </div>
-                            )}
-                          </div>
+                    </div>
+
+                    {/* Month View Calendar Grid */}
+                    {/* Hide day headers for annual habits */}
+                    {!(selectedHabit.expectedFrequency && 
+                       typeof selectedHabit.expectedFrequency === 'object' && 
+                       selectedHabit.expectedFrequency.period === 'year') && (
+                      <div className="mini-calendar-header">
+                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                          <div key={`day-${index}-${day}`} className="mini-calendar-day-header">{day}</div>
                         ))}
                       </div>
-                    ) : (
-                      // Monthly view - calendar grid
-                      <div>
-                        {/* Calendar header */}
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(7, 1fr)', 
-                          gap: '4px',
-                          marginBottom: '12px'
-                        }}>
-                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                            <div
-                              key={day}
-                              style={{
-                                padding: '10px',
-                                textAlign: 'center',
-                                fontSize: '13px',
-                                fontWeight: '600',
-                                color: '#4b5563',
-                                backgroundColor: '#f8fafc',
-                                borderRadius: '6px',
-                                border: '1px solid #e2e8f0'
-                              }}
-                            >
-                              {day}
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {/* Calendar body */}
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(7, 1fr)', 
-                          gap: '4px' 
-                        }}>
-                          {calendarData.data.map((day, index) => (
-                            <div
-                              key={index}
-                              style={{
-                                aspectRatio: '1 / 1',  // Force perfect square
-                                width: '100%',
-                                padding: '4px',
-                                textAlign: 'center',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '14px',
-                                backgroundColor: day.isCurrentMonth 
-                                  ? day.color 
-                                  : '#f9fafb',
-                                color: day.isCurrentMonth 
-                                  ? (day.completions > 0 ? '#ffffff' : '#374151')
-                                  : '#9ca3af',
-                                border: day.isToday 
-                                  ? '2px solid #3b82f6' 
-                                  : '1px solid rgba(0,0,0,0.1)',
-                                fontWeight: day.isToday ? 'bold' : 'normal',
-                                cursor: day.isCurrentMonth ? 'pointer' : 'default',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                boxShadow: day.isToday ? '0 4px 12px rgba(59, 130, 246, 0.15)' : 'none',
-                                transform: 'scale(1)',
-                                position: 'relative',
-                                overflow: 'hidden'  // Prevent content from breaking square shape
-                              }}
-                              title={day.isCurrentMonth ? `${day.fullDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}: ${day.completions} / ${day.targetCount} times (${Math.round(day.percentage)}%)` : ''}
-                              onMouseEnter={(e) => {
-                                if (day.isCurrentMonth) {
-                                  e.target.style.transform = 'scale(1.05)';
-                                  e.target.style.boxShadow = day.completions > 0 
-                                    ? '0 6px 20px rgba(0, 0, 0, 0.3)' 
-                                    : '0 4px 12px rgba(0, 0, 0, 0.1)';
-                                  e.target.style.zIndex = '10';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (day.isCurrentMonth) {
-                                  e.target.style.transform = 'scale(1)';
-                                  e.target.style.boxShadow = day.isToday 
-                                    ? '0 4px 12px rgba(59, 130, 246, 0.15)' 
-                                    : 'none';
-                                  e.target.style.zIndex = '1';
-                                }
-                              }}
-                            >
-                              <span style={{
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                                lineHeight: '1',
-                                marginBottom: '2px'
-                              }}>
-                                {day.date}
-                              </span>
-                              {/* Always render a completion count area to maintain consistent height */}
-                              <span style={{
-                                fontSize: '10px',
-                                lineHeight: '1',
-                                fontWeight: 'bold',
-                                color: day.completions > 1 ? 
-                                  (day.completions > 0 ? '#ffffff' : '#10b981') : 'transparent',
-                                backgroundColor: day.completions > 1 ? 
-                                  (day.completions > 0 ? 'rgba(0,0,0,0.2)' : 'transparent') : 'transparent',
-                                padding: '2px 4px',
-                                borderRadius: '4px',
-                                visibility: day.completions > 1 ? 'visible' : 'hidden',
-                                minHeight: '16px',  // Reserve space even when hidden
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}>
-                                {day.completions > 1 ? `${day.completions}×` : '2×'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {/* GitHub-style heatmap legend */}
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          fontSize: '12px',
-                          color: '#6b7280',
-                          marginTop: '16px',
-                          padding: '12px',
-                          backgroundColor: '#f8fafc',
-                          borderRadius: '8px',
-                          border: '1px solid #e2e8f0'
-                        }}>
-                          <div>
-                            <strong>{calendarData.data.filter(d => d.completions > 0).length}</strong> days with completions this month
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span>0%</span>
-                            <div style={{ display: 'flex', gap: '2px' }}>
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#ebedf0', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#d2f8d2', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#9be9a8', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#40c463', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#30a14e', borderRadius: '2px' }} />
-                              <div style={{ width: '12px', height: '12px', backgroundColor: '#216e39', borderRadius: '2px' }} />
-                            </div>
-                            <span>100%+</span>
-                          </div>
-                        </div>
-                      </div>
                     )}
+                    
+                    <div className="mini-calendar-grid">
+                      {/* Show current month in 7×~5 grid for non-annual habits, or year view for annual habits */}
+                      {(() => {
+                        // Check if this is an annual habit
+                        const isAnnualHabit = selectedHabit.expectedFrequency && 
+                          typeof selectedHabit.expectedFrequency === 'object' && 
+                          selectedHabit.expectedFrequency.period === 'year';
+                        
+                        if (isAnnualHabit) {
+                          // Annual habit: Show 12 months of current year
+                          const currentYear = selectedMonth.getFullYear();
+                          const months = [];
+                          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                          
+                          for (let month = 0; month < 12; month++) {
+                            // Count completions in this month
+                            const monthCompletions = (selectedHabit.completedDates || [])
+                              .filter(cd => {
+                                const date = new Date(cd);
+                                return date.getFullYear() === currentYear && 
+                                       date.getMonth() === month;
+                              }).length;
+                            
+                            // Get monthly target
+                            const { count: yearlyTarget } = selectedHabit.expectedFrequency;
+                            const monthlyTarget = Math.ceil(yearlyTarget / 12);
+                            
+                            const completionRate = monthlyTarget > 0 ? 
+                              Math.min((monthCompletions / monthlyTarget) * 100, 100) : 0;
+                            
+                            const hasCompletion = monthCompletions >= monthlyTarget;
+                            const partialCompletion = monthCompletions > 0 && monthCompletions < monthlyTarget;
+                            const isCurrentMonth = month === new Date().getMonth() && 
+                                                 currentYear === new Date().getFullYear();
+                            
+                            months.push(
+                              <div
+                                key={month}
+                                className={`annual-month-cell ${
+                                  hasCompletion ? 'has-completion' : 
+                                  partialCompletion ? 'partial-completion' : ''
+                                } ${isCurrentMonth ? 'current-month' : ''}`}
+                                title={`${monthNames[month]} ${currentYear}: ${monthCompletions}/${monthlyTarget} completed (${Math.round(completionRate)}%)`}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: '12px 8px',
+                                  border: '1px solid #e5e7eb',
+                                  borderRadius: '8px',
+                                  background: getCompletionBackgroundColor(monthCompletions, monthlyTarget),
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  minHeight: '60px'
+                                }}
+                              >
+                                <div style={{ 
+                                  fontSize: '12px', 
+                                  fontWeight: '600',
+                                  color: '#374151',
+                                  marginBottom: '4px'
+                                }}>
+                                  {monthNames[month]}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '14px', 
+                                  fontWeight: 'bold',
+                                  color: getCompletionTextColor(monthCompletions, monthlyTarget)
+                                }}>
+                                  {monthCompletions}x
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <div className="annual-month-grid">
+                              {months}
+                            </div>
+                          );
+                        } else {
+                          // Regular habit: Show daily calendar view
+                            const firstDay = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
+                            // eslint-disable-next-line no-unused-vars
+                            const lastDay = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
+                            const startDate = new Date(firstDay);
+                            startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
+                            
+                            const days = [];
+                            for (let i = 0; i < 42; i++) { // 6 weeks × 7 days
+                              const date = new Date(startDate);
+                              date.setDate(startDate.getDate() + i);
+                              
+                              const dateStr = date.toISOString().slice(0, 10);
+                              const completions = (selectedHabit.completedDates || [])
+                                .filter(cd => cd.slice(0, 10) === dateStr).length;
+                              
+                              let dailyTarget = 1;
+                              if (selectedHabit.expectedFrequency && typeof selectedHabit.expectedFrequency === 'object') {
+                                const { count, period } = selectedHabit.expectedFrequency;
+                                if (period === 'day') dailyTarget = count;
+                                if (period === 'week') dailyTarget = Math.ceil(count / 7);
+                                if (period === 'month') dailyTarget = Math.ceil(count / 30);
+                              }
+                              
+                              const percentage = dailyTarget > 0 ? (completions / dailyTarget) * 100 : 0;
+                              
+                              // Use 4-tier color system matching weekly progress
+                              let completionStatus;
+                              if (percentage >= 100) {
+                                completionStatus = 'has-completion'; // Green (100%)
+                              } else if (percentage >= 50) {
+                                completionStatus = 'high-partial'; // Orange (50%-99%)
+                              } else if (percentage >= 1) {
+                                completionStatus = 'low-partial'; // Yellow (1%-49%)
+                              } else {
+                                completionStatus = ''; // Gray (0%)
+                              }
+                              
+                              const isToday = dateStr === new Date().toISOString().slice(0, 10);
+                              const isCurrentMonth = date.getMonth() === selectedMonth.getMonth();
+                              
+                              days.push(
+                                <div
+                                  key={i}
+                                  className={`mini-calendar-day ${
+                                    isCurrentMonth ? 'current-month' : 'other-month'
+                                  } ${completionStatus} ${isToday ? 'today' : ''}`}
+                                  title={`${date.toLocaleDateString()}: ${completions}/${dailyTarget} completed`}
+                                >
+                                  <div className="calendar-day-number">{date.getDate()}</div>
+                                  {completions > 0 && (
+                                    <>
+                                      {/* Small circle indicator for mobile */}
+                                      <div className="completion-indicator mobile-only" style={{
+                                        position: 'absolute',
+                                        bottom: '2px',
+                                        right: '2px',
+                                        fontSize: '8px',
+                                        fontWeight: 'bold'
+                                      }}>
+                                        {completions}
+                                      </div>
+                                      {/* Text label for desktop */}
+                                      <div className="completion-label desktop-only">
+                                        {completions}×
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            }
+                            
+                            return days;
+                        } // End of else block for regular habits
+                          })()}
+                        </div>
                   </div>
                 </div>
               );
@@ -1365,13 +1294,30 @@ function MetricsView({ habits, selectedHabit, onClose }) {
                             marginBottom: '6px',
                             fontWeight: '500'
                           }}>
-                            {note.date ? new Date(note.date).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }) : 'No date'}
+                            {note.date ? (() => {
+                              // Handle potential timezone issues by creating date properly
+                              let date;
+                              if (note.date.includes('T')) {
+                                // Full ISO timestamp - use as is
+                                date = new Date(note.date);
+                              } else {
+                                // Date-only string - treat as local date, not UTC
+                                const [year, month, day] = note.date.split('-');
+                                date = new Date(year, month - 1, day, new Date().getHours(), new Date().getMinutes());
+                              }
+                              
+                              const dateStr = date.toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric'
+                              });
+                              const timeStr = date.toLocaleTimeString('en-US', { 
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              });
+                              return `${dateStr} at ${timeStr}`;
+                            })() : 'No date'}
                           </div>
                           <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.5' }}>
                             {note.text || note}

@@ -1,0 +1,243 @@
+/* Simple Filter Styles */
+
+.simple-filter-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Search Container */
+.search-container {
+  flex: 1;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0 16px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-icon {
+  font-size: 16px;
+  margin-right: 12px;
+  color: #6b7280;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 16px 0;
+  font-size: 16px;
+  color: #374151;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.clear-search {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.clear-search:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Filter Dropdown */
+.filter-dropdown-container {
+  position: relative;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 20px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.filter-button:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.filter-icon {
+  font-size: 16px;
+}
+
+.filter-label {
+  flex: 1;
+  text-align: left;
+}
+
+.filter-count {
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 20px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+/* Filter Dropdown Menu */
+.filter-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  margin-top: 8px;
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+  box-sizing: border-box;
+}
+
+.filter-option:last-child {
+  border-bottom: none;
+}
+
+.filter-option:hover {
+  background: #f8fafc;
+}
+
+.filter-option.active {
+  background: #eff6ff;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.option-icon {
+  font-size: 16px;
+}
+
+.option-label {
+  flex: 1;
+  text-align: left;
+}
+
+.option-count {
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 20px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.filter-option.active .option-count {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .simple-filter-container {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .search-container {
+    flex: 2;
+  }
+  
+  .filter-dropdown-container {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 767px) {
+  .search-input-wrapper {
+    padding: 0 12px;
+  }
+  
+  .search-input {
+    padding: 14px 0;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .filter-button {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  
+  .filter-option {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+}

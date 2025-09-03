@@ -31,7 +31,9 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
       } else if (period === 'week') {
         const now = new Date();
         const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
+        // Start from Sunday (0) or Monday (1) - using Sunday as start of week  
+        const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        weekStart.setDate(now.getDate() - dayOfWeek); // Go back to Sunday
         weekStart.setHours(0, 0, 0, 0);
         
         const weekEnd = new Date(weekStart);
@@ -127,6 +129,15 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
     return Math.min((todayCount / targetCount) * 100, 100);
   };
 
+  // Get progress bar color based on completion percentage
+  const getProgressBarColor = () => {
+    const percentage = getProgressPercentage();
+    if (percentage >= 100) return '#22c55e';  // Green (100%)
+    if (percentage >= 50) return '#f97316';   // Orange (50%-99%)
+    if (percentage >= 1) return '#eab308';    // Yellow (1%-49%)
+    return '#e5e7eb'; // Gray (0%)
+  };
+
   // Check if goal is complete
   const isComplete = todayCount >= getTargetCount();
 
@@ -145,7 +156,7 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
       <div style={{
         fontSize: '14px',
         fontWeight: 'bold',
-        color: isComplete ? '#4caf50' : '#333',
+        color: isComplete ? '#22c55e' : '#333',
         textAlign: 'center'
       }}>
         {todayCount}/{getTargetCount()} times {getPeriodText()}
@@ -162,7 +173,7 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
         <div style={{
           width: `${getProgressPercentage()}%`,
           height: '100%',
-          backgroundColor: isComplete ? '#4caf50' : '#2196f3',
+          backgroundColor: getProgressBarColor(),
           transition: 'width 0.3s ease'
         }} />
       </div>
@@ -199,7 +210,10 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            position: 'relative',
+            zIndex: 50,
+            pointerEvents: loading || todayCount === 0 ? 'none' : 'auto'
           }}
           onFocus={e => e.target.style.outline = '2px solid #ff5722'}
           onBlur={e => e.target.style.outline = 'none'}
@@ -216,7 +230,7 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
             height: '36px',
             border: '1px solid #ccc',
             borderRadius: '50%',
-            backgroundColor: loading ? '#ccc' : '#4caf50',
+            backgroundColor: loading ? '#ccc' : '#22c55e',
             color: 'white',
             cursor: loading ? 'wait' : 'pointer',
             fontSize: '20px',
@@ -224,9 +238,12 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            position: 'relative',
+            zIndex: 50,
+            pointerEvents: loading ? 'none' : 'auto'
           }}
-          onFocus={e => e.target.style.outline = '2px solid #4caf50'}
+          onFocus={e => e.target.style.outline = '2px solid #22c55e'}
           onBlur={e => e.target.style.outline = 'none'}
         >
           +
@@ -237,7 +254,7 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
       {isComplete && (
         <div style={{
           fontSize: '14px',
-          color: '#4caf50',
+          color: '#22c55e',
           fontWeight: 'bold',
           textAlign: 'center',
           marginTop: '4px'

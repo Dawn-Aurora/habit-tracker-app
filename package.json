@@ -4,17 +4,15 @@
   "description": "A simple habit tracker application built with TypeScript and Express.",
   "main": "dist/server.js",
   "scripts": {
-    "start": "ts-node backend/src/server.ts",
+    "start": "NODE_ENV=production node dist/server.js",
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "tsc",
     "build:frontend": "cd habit-tracker-frontend && npm install && npm run build",
     "start:prod": "NODE_ENV=production node dist/server.js",
     "dev": "ts-node backend/src/server.ts",
     "dev:react": "cd habit-tracker-frontend && npm start",
-    "dev:html": "node dev-server.js",
     "install:all": "npm install && cd habit-tracker-frontend && npm install",
     "test": "jest",
-    "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:frontend": "cd habit-tracker-frontend && npm test",
     "deploy:render": "npm run build && npm run start:prod"

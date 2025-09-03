@@ -163,7 +163,6 @@ const safeJsonParse = (value, fallback = []) => {
         return JSON.parse(value);
     }
     catch (e) {
-        console.log('JSON parse error for value:', value, 'Error:', e.message);
         return fallback;
     }
 };
@@ -286,8 +285,11 @@ const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const { id } = req.params;
         const { name, completedDates, completions, tags, notes, expectedFrequency } = req.body;
         (0, validation_1.validateHabitId)(id);
-        // Fetch the current habit to preserve existing fields
-        const currentHabit = (yield dataClient.getHabits()).find((h) => h.id === id);
+        // Get userId from authenticated user for proper filtering
+        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        // Fetch the current habit to preserve existing fields (filtered by user)
+        const allHabits = yield dataClient.getHabits(userId);
+        const currentHabit = allHabits.find((h) => h.id === id);
         if (!currentHabit)
             throw new validation_1.NotFoundError('Habit not found');
         // Only validate name if provided and not blank
@@ -318,7 +320,6 @@ const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const tagsStr = finalTags.join(',');
         const notesStr = JSON.stringify(finalNotes);
         // Update with all fields preserved
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
         const result = yield dataClient.updateHabit(id, finalName, completionsStr, tagsStr, notesStr, finalExpectedFrequency, userId);
         res.json({
             status: 'success',
@@ -412,9 +413,10 @@ const addHabitNote = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const existingCompletedDates = getExistingValue('completedDates', habit);
         const existingTags = getExistingValue('tags', habit);
         const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
-        // Add new note with full timestamp
+        // Add new note with full timestamp - ensure we preserve the full ISO string
+        const fullTimestamp = date || new Date().toISOString();
         existingNotes.push({
-            date: date || new Date().toISOString(),
+            date: fullTimestamp,
             text: noteText
         });
         // Convert arrays to strings for SharePoint

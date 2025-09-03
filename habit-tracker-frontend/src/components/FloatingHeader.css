@@ -1,0 +1,98 @@
+/* Floating Header CSS */
+
+.floating-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+}
+
+.floating-header-content {
+  padding: 16px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Desktop Layout */
+.floating-header-desktop {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.floating-header-left {
+  flex: 1;
+  min-width: 0; /* Allow shrinking */
+}
+
+.floating-header-right {
+  flex: 0 0 auto;
+  min-width: 300px;
+}
+
+/* Mobile Layout */
+.floating-header-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Reduced gap on mobile */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .floating-header-content {
+    padding: 8px; /* Reduced padding on mobile */
+  }
+  
+  .floating-header-right {
+    min-width: auto;
+  }
+  
+  /* Make Quick Actions more compact on mobile */
+  .floating-header .quick-actions-container {
+    padding: 8px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 0;
+  }
+  
+  .floating-header-mobile .quick-actions-container {
+    max-width: 100%;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 480px) {
+  .floating-header-content {
+    padding: 6px;
+  }
+  
+  .floating-header-mobile {
+    gap: 8px;
+  }
+  
+  /* Even more compact on small mobile screens */
+  .floating-header .quick-actions-container {
+    padding: 6px;
+  }
+}
+
+/* Enhanced Quick Actions in floating header */
+.floating-header .quick-actions-container {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  margin-bottom: 0;
+  padding: 0;
+}
+
+/* Enhanced Filter in floating header */
+.floating-header .simple-filter-container {
+  margin-bottom: 0;
+}

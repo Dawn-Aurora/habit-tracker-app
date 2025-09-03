@@ -222,32 +222,62 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
       </div>
       
       
-      <button 
-        type="submit" 
-        disabled={loading}
-        className={`modern-btn modern-btn-lg ${loading ? 'modern-btn-secondary' : 'modern-btn-primary'}`}
-        style={{ 
-          width: '100%',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 'var(--space-2)'
-        }}
-        aria-describedby={error ? "habit-error" : undefined}
-      >
-        {loading ? (
-          <>
-            <span>⏳</span>
-            <span>Adding Habit...</span>
-          </>
-        ) : (
-          <>
-            <span>✨</span>
-            <span>Add Habit</span>
-          </>
-        )}
-      </button>
+      <div style={{ 
+        display: 'flex', 
+        gap: 'var(--space-3)', 
+        marginTop: 'var(--space-4)',
+        justifyContent: 'flex-end'
+      }}>
+        <button 
+          type="button"
+          onClick={onCancel}
+          className="modern-btn-secondary"
+          style={{ 
+            padding: '12px 24px',
+            border: 'none',
+            borderRadius: '8px',
+            background: '#f3f4f6',
+            color: '#374151',
+            cursor: 'pointer',
+            fontWeight: '500',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Cancel
+        </button>
+        <button 
+          type="submit" 
+          disabled={loading}
+          className={`modern-btn ${loading ? 'modern-btn-secondary' : 'modern-btn-primary'}`}
+          style={{ 
+            padding: '12px 24px',
+            border: 'none',
+            borderRadius: '8px',
+            background: loading ? '#f3f4f6' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: loading ? '#374151' : 'white',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 'var(--space-2)',
+            transition: 'all 0.2s ease'
+          }}
+          aria-describedby={error ? "habit-error" : undefined}
+        >
+          {loading ? (
+            <>
+              <span>⏳</span>
+              <span>Adding Habit...</span>
+            </>
+          ) : (
+            <>
+              <span>✨</span>
+              <span>Add Habit</span>
+            </>
+          )}
+        </button>
+      </div>
     </form>
   );
 }

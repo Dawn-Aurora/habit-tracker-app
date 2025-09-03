@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import './styles/modern-theme.css';
 import './styles/components.css';
 import './styles/layout.css';
+import './styles/responsive-layout.css';
+import './styles/mobile-navigation.css';
+import './styles/mobile-habit-card.css';
 import EnhancedHabitList from './components/EnhancedHabitList';
 import EnhancedAddHabitForm from './components/EnhancedAddHabitForm';
 import EditHabitForm from './components/EditHabitForm';
@@ -12,9 +15,14 @@ import StatsCard from './components/StatsCard';
 import MetricsView from './components/MetricsView';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import AddNoteModal from './components/AddNoteModal';
+import MobileNavigation from './components/MobileNavigation';
+import { useResponsive } from './hooks/useResponsive';
 import api from './api';
 
 function App() {
+  // Responsive design hook
+  const responsive = useResponsive();
+  
   // Authentication state
   const [user, setUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
@@ -31,11 +39,35 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Mobile navigation state
+  const [activeView, setActiveView] = useState('habits');
+
   // Scroll-to-top button state
   const [showScrollToTop, setShowScrollToTop] = useState(false);
 
+  // Normalize expectedFrequency values coming from the API
+  // Accepts object {count, period}, legacy strings (e.g., 'daily'),
+  // or JSON strings like '{"count":1,"period":"day"}'
+  const normalizeExpectedFrequency = (freq) => {
+    if (!freq) return '';
+    if (typeof freq === 'object' && freq !== null) return freq;
+    if (typeof freq === 'string') {
+      const t = freq.trim();
+      if (t.startsWith('{') && t.endsWith('}')) {
+        try {
+          const obj = JSON.parse(t);
+          if (obj && typeof obj.count !== 'undefined' && obj.period) return obj;
+        } catch (_) {
+          // fall through
+        }
+      }
+      return t; // legacy string like 'daily', 'weekly', etc.
+    }
+    return '';
+  };
+
   // Load habits from API
-  const loadHabits = async () => {
+  const loadHabits = useCallback(async () => {
     try {
       const response = await api.get('/habits');
       
@@ -46,14 +78,18 @@ function App() {
       } else if (Array.isArray(response.data)) {
         habits = response.data; // API returns [...] directly
       }
-      
-      setHabits(habits);
+      // Normalize expectedFrequency so components render consistently
+      const normalized = habits.map(h => ({
+        ...h,
+        expectedFrequency: normalizeExpectedFrequency(h.expectedFrequency)
+      }));
+      setHabits(normalized);
     } catch (err) {
       console.error('App.js - Error loading habits:', err);
       setError('Failed to load habits');
       setHabits([]); // Ensure habits is always an array
     }
-  };
+  }, []);
 
   // Check for existing authentication on app load
   useEffect(() => {
@@ -72,7 +108,7 @@ function App() {
       }
     }
     setLoading(false);
-  }, []);
+  }, [loadHabits]);
 
   // Scroll-to-top button effect
   useEffect(() => {
@@ -84,6 +120,48 @@ function App() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Modal layout fix - prevent viewport width changes during actual modal operations
+  useEffect(() => {
+    if (editingHabit || showMetrics || showAnalytics || showAddNote) {
+      // Calculate scrollbar width to prevent layout shift
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      
+      // Set a global flag to prevent responsive changes during modal operations
+      window.__MODAL_OPEN__ = true;
+      
+      // Prevent body scroll and compensate for scrollbar
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+      
+      // Also prevent html element from scrolling
+      document.documentElement.style.overflow = 'hidden';
+      
+      // Force the viewport to maintain its width by setting a fixed width
+      const currentWidth = window.innerWidth;
+      document.documentElement.style.width = `${currentWidth}px`;
+    } else {
+      // Clear the global flag with a small delay to prevent layout flicker
+      setTimeout(() => {
+        window.__MODAL_OPEN__ = false;
+      }, 50);
+      
+      // Restore normal scrolling
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.width = '';
+    }
+
+    // Cleanup function to ensure styles are reset
+    return () => {
+      window.__MODAL_OPEN__ = false;
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.width = '';
+    };
+  }, [editingHabit, showMetrics, showAnalytics, showAddNote]);
 
   // Smooth scroll to top function
   const scrollToTop = () => {
@@ -163,14 +241,24 @@ function App() {
   const handleEditHabit = async (habitId, habitData) => {
     try {
       const response = await api.put(`/habits/${habitId}`, habitData);
+      
+      // Extract the actual habit data from the response
+      const updatedHabit = response.data.data || response.data;
+      // Normalize expectedFrequency to avoid JSON-string rendering
+      const fixedHabit = {
+        ...updatedHabit,
+        expectedFrequency: normalizeExpectedFrequency(updatedHabit.expectedFrequency)
+      };
+
       setHabits(prevHabits => 
         prevHabits.map(habit => 
-          habit.id === habitId ? response.data : habit
+          habit.id === habitId ? fixedHabit : habit
         )
       );
       setEditingHabit(null);
     } catch (err) {
       console.error('Error editing habit:', err);
+      console.error('Failed habit ID:', habitId);
       setError('Failed to edit habit');
     }
   };
@@ -352,6 +440,37 @@ function App() {
   const stats = calculateStats(habits);
   const safeHabits = Array.isArray(habits) ? habits : [];
 
+  // Mobile navigation handler
+  const handleMobileViewChange = (view) => {
+    setActiveView(view);
+    
+    // Handle view changes for mobile navigation
+    switch (view) {
+      case 'habits':
+        setShowAddForm(false);
+        setShowMetrics(false);
+        setShowAnalytics(false);
+        break;
+      case 'add':
+        setShowAddForm(true);
+        setShowMetrics(false);
+        setShowAnalytics(false);
+        break;
+      case 'metrics':
+        setShowAddForm(false);
+        setShowMetrics(true);
+        setShowAnalytics(false);
+        break;
+      case 'analytics':
+        setShowAddForm(false);
+        setShowMetrics(false);
+        setShowAnalytics(true);
+        break;
+      default:
+        break;
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -459,10 +578,26 @@ function App() {
             </div>
             
             {showAddForm && (
-              <EnhancedAddHabitForm
-                onAddHabit={handleAddHabit}
-                onCancel={() => setShowAddForm(false)}
-              />
+              <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowAddForm(false)}>
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h3>✨ Add New Habit</h3>
+                    <button 
+                      className="btn-close"
+                      onClick={() => setShowAddForm(false)}
+                      aria-label="Close"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="modal-form-content">
+                    <EnhancedAddHabitForm
+                      onAddHabit={handleAddHabit}
+                      onCancel={() => setShowAddForm(false)}
+                    />
+                  </div>
+                </div>
+              </div>
             )}
           </section>
 
@@ -526,14 +661,10 @@ function App() {
 
       {/* Analytics Dashboard Modal */}
       {showAnalytics && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '1200px', width: '90%' }}>
-            <AnalyticsDashboard
-              habits={habits}
-              onClose={() => setShowAnalytics(false)}
-            />
-          </div>
-        </div>
+        <AnalyticsDashboard
+          habits={habits}
+          onClose={() => setShowAnalytics(false)}
+        />
       )}
 
       {/* Add Note Modal */}
@@ -585,6 +716,18 @@ function App() {
         >
           ⬆️
         </button>
+      )}
+
+      {/* Mobile Navigation */}
+      {responsive.showMobileNav && user && (
+        <MobileNavigation
+          activeView={activeView}
+          onViewChange={handleMobileViewChange}
+          completedToday={stats.completedToday}
+          totalHabits={safeHabits.length}
+          user={user}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   );
