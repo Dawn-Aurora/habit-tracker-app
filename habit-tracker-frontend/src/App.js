@@ -20,14 +20,11 @@ import { useResponsive } from './hooks/useResponsive';
 import api from './api';
 
 function App() {
-  // Responsive design hook
   const responsive = useResponsive();
   
-  // Authentication state
   const [user, setUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
   
-  // App state
   const [habits, setHabits] = useState([]);
   const [editingHabit, setEditingHabit] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -39,15 +36,10 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Mobile navigation state
   const [activeView, setActiveView] = useState('habits');
 
-  // Scroll-to-top button state
   const [showScrollToTop, setShowScrollToTop] = useState(false);
 
-  // Normalize expectedFrequency values coming from the API
-  // Accepts object {count, period}, legacy strings (e.g., 'daily'),
-  // or JSON strings like '{"count":1,"period":"day"}'
   const normalizeExpectedFrequency = (freq) => {
     if (!freq) return '';
     if (typeof freq === 'object' && freq !== null) return freq;
@@ -58,27 +50,23 @@ function App() {
           const obj = JSON.parse(t);
           if (obj && typeof obj.count !== 'undefined' && obj.period) return obj;
         } catch (_) {
-          // fall through
         }
       }
-      return t; // legacy string like 'daily', 'weekly', etc.
+      return t;
     }
     return '';
   };
 
-  // Load habits from API
   const loadHabits = useCallback(async () => {
     try {
       const response = await api.get('/habits');
       
-      // Handle different response structures
       let habits = [];
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        habits = response.data.data; // API returns {status: 'success', data: [...]}
+        habits = response.data.data;
       } else if (Array.isArray(response.data)) {
-        habits = response.data; // API returns [...] directly
+        habits = response.data;
       }
-      // Normalize expectedFrequency so components render consistently
       const normalized = habits.map(h => ({
         ...h,
         expectedFrequency: normalizeExpectedFrequency(h.expectedFrequency)
@@ -87,11 +75,10 @@ function App() {
     } catch (err) {
       console.error('App.js - Error loading habits:', err);
       setError('Failed to load habits');
-      setHabits([]); // Ensure habits is always an array
+      setHabits([]);
     }
   }, []);
 
-  // Check for existing authentication on app load
   useEffect(() => {
     const storedToken = localStorage.getItem('authToken');
     const storedUser = localStorage.getItem('user');
@@ -110,50 +97,40 @@ function App() {
     setLoading(false);
   }, [loadHabits]);
 
-  // Scroll-to-top button effect
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      setShowScrollToTop(scrollTop > 300); // Show after scrolling 300px
+      setShowScrollToTop(scrollTop > 300);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Modal layout fix - prevent viewport width changes during actual modal operations
   useEffect(() => {
     if (editingHabit || showMetrics || showAnalytics || showAddNote) {
-      // Calculate scrollbar width to prevent layout shift
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       
-      // Set a global flag to prevent responsive changes during modal operations
       window.__MODAL_OPEN__ = true;
       
-      // Prevent body scroll and compensate for scrollbar
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
       
-      // Also prevent html element from scrolling
       document.documentElement.style.overflow = 'hidden';
       
-      // Force the viewport to maintain its width by setting a fixed width
       const currentWidth = window.innerWidth;
       document.documentElement.style.width = `${currentWidth}px`;
     } else {
-      // Clear the global flag with a small delay to prevent layout flicker
       setTimeout(() => {
         window.__MODAL_OPEN__ = false;
       }, 50);
       
-      // Restore normal scrolling
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
       document.documentElement.style.overflow = '';
       document.documentElement.style.width = '';
     }
 
-    // Cleanup function to ensure styles are reset
     return () => {
       window.__MODAL_OPEN__ = false;
       document.body.style.overflow = '';
@@ -163,7 +140,6 @@ function App() {
     };
   }, [editingHabit, showMetrics, showAnalytics, showAddNote]);
 
-  // Smooth scroll to top function
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -171,7 +147,6 @@ function App() {
     });
   };
 
-  // Authentication handlers
   const handleLoginSuccess = (userData, token) => {
     setUser(userData);
     setError('');
@@ -187,24 +162,17 @@ function App() {
   };
 
   const handleRegisterSuccess = (userData, token) => {
-    // Store user data but don't immediately log them in
-    // Instead, show a success message and redirect to login
     setError('');
     setShowRegister(false);
-    
-    // You could add a success message here if needed
-    // For now, just go back to login form
   };
 
-  // Habit management handlers
   const handleAddHabit = async (habitData) => {
     try {
       const response = await api.post('/habits', habitData);
       
-      // Handle different response structures
       let newHabit = response.data;
       if (response.data && response.data.data) {
-        newHabit = response.data.data; // API returns {status: 'success', data: {...}}
+        newHabit = response.data.data;
       }
       
       setHabits(prevHabits => {
@@ -213,13 +181,12 @@ function App() {
       });
       setShowAddForm(false);
       
-      // Refresh habits to ensure consistency
       await loadHabits();
       
     } catch (err) {
       console.error('App.js - Error adding habit:', err);
       setError('Failed to add habit');
-      throw err; // Re-throw to allow EnhancedAddHabitForm to handle it
+      throw err;
     }
   };
 
@@ -231,7 +198,7 @@ function App() {
     }
     try {
       await api.post(`/habits/${habitId}/complete`);
-      loadHabits(); // Refresh habits
+      loadHabits();
     } catch (err) {
       console.error('Error completing habit:', err);
       setError('Failed to complete habit');
@@ -242,9 +209,7 @@ function App() {
     try {
       const response = await api.put(`/habits/${habitId}`, habitData);
       
-      // Extract the actual habit data from the response
       const updatedHabit = response.data.data || response.data;
-      // Normalize expectedFrequency to avoid JSON-string rendering
       const fixedHabit = {
         ...updatedHabit,
         expectedFrequency: normalizeExpectedFrequency(updatedHabit.expectedFrequency)
@@ -280,29 +245,24 @@ function App() {
     }
   };
 
-  // Helper function to calculate stats with new timestamp-based completion system
   const calculateStats = (habits) => {
     const safeHabits = Array.isArray(habits) ? habits : [];
     const today = new Date().toISOString().slice(0, 10);
     
-    // Calculate completions today (count all habits with completions today)
     const completedToday = safeHabits.filter(habit => {
       const completedDates = habit.completedDates || [];
       return completedDates.some(dateTime => dateTime.slice(0, 10) === today);
     }).length;
     
-    // Calculate success rate (habits meeting their expected frequency in the last 7 days)
     const last7Days = Array.from({length: 7}, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
       return d.toISOString().slice(0, 10);
     });
     
-    // Helper function to parse expected frequency (same as in AnalyticsDashboard)
     const parseExpectedFrequency = (frequency) => {
-      if (!frequency) return { timesPerPeriod: 1, periodDays: 1 }; // Default to daily
+      if (!frequency) return { timesPerPeriod: 1, periodDays: 1 };
       
-      // Handle structured frequency object
       if (typeof frequency === 'object' && frequency.count && frequency.period) {
         const { count, period } = frequency;
         switch (period) {
@@ -317,25 +277,22 @@ function App() {
         }
       }
       
-      // Handle legacy string frequency
       if (typeof frequency !== 'string') return { timesPerPeriod: 1, periodDays: 1 };
       
       const freq = frequency.toLowerCase();
       if (freq.includes('daily') || freq === 'daily') return { timesPerPeriod: 1, periodDays: 1 };
       if (freq.includes('weekly') || freq === 'weekly') return { timesPerPeriod: 1, periodDays: 7 };
       
-      // Parse patterns like "2 times/week", "3 times per week", etc.
       const match = freq.match(/(\d+)\s*times?\s*(?:per\s*|\/)\s*week/);
       if (match) return { timesPerPeriod: parseInt(match[1]), periodDays: 7 };
       
-      // Parse patterns like "every 2 days", "every 3 days"
       const everyMatch = freq.match(/every\s*(\d+)\s*days?/);
       if (everyMatch) {
         const days = parseInt(everyMatch[1]);
         return { timesPerPeriod: 1, periodDays: days };
       }
       
-      return { timesPerPeriod: 1, periodDays: 1 }; // Default to daily if can't parse
+      return { timesPerPeriod: 1, periodDays: 1 };
     };
     
     const habitsMeetingExpectedFrequency = safeHabits.filter(habit => {
@@ -343,7 +300,6 @@ function App() {
       const { timesPerPeriod, periodDays } = parseExpectedFrequency(habit.expectedFrequency);
       
       if (periodDays === 1) {
-        // Daily habit: count successful days in last 7 days
         let successfulDays = 0;
         for (let i = 0; i < 7; i++) {
           const checkDate = new Date();
@@ -359,11 +315,9 @@ function App() {
           }
         }
         
-        // Success if at least 50% of days met the goal
         return successfulDays >= Math.ceil(7 * 0.5);
         
       } else if (periodDays === 7) {
-        // Weekly habit: check if this week's goal was met
         const last7DaysCompletions = completedDates.filter(dateTime => 
           last7Days.includes(dateTime.slice(0, 10))
         ).length;
@@ -371,7 +325,6 @@ function App() {
         return last7DaysCompletions >= timesPerPeriod;
         
       } else {
-        // Other frequencies: use proportional calculation
         const last7DaysCompletions = completedDates.filter(dateTime => 
           last7Days.includes(dateTime.slice(0, 10))
         ).length;
@@ -384,42 +337,35 @@ function App() {
     const successRate = safeHabits.length > 0 ? 
       Math.round((habitsMeetingExpectedFrequency / safeHabits.length) * 100) : 0;
     
-    // Calculate current streak (consecutive days with at least one habit completed)
     let currentStreak = 0;
     
-    // Get all unique dates where any habit was completed
     const allCompletionDates = new Set();
     safeHabits.forEach(habit => {
       const completedDates = habit.completedDates || [];
       completedDates.forEach(dateTime => {
-        const dateOnly = dateTime.slice(0, 10); // Extract date part (YYYY-MM-DD)
+        const dateOnly = dateTime.slice(0, 10);
         allCompletionDates.add(dateOnly);
       });
     });
     
-    // Convert to sorted array (newest first)
     const sortedDates = Array.from(allCompletionDates).sort((a, b) => b.localeCompare(a));
     
     if (sortedDates.length === 0) {
       currentStreak = 0;
     } else {
-      // Start from today and count consecutive days
       const today = new Date();
       const todayStr = today.toISOString().slice(0, 10);
       
-      // Check if today has any completions
       if (!sortedDates.includes(todayStr)) {
         currentStreak = 0;
       } else {
-        // Count consecutive days starting from today
         let checkDate = new Date(today);
         
-        for (let i = 0; i < 365; i++) { // Check up to 365 days back
+        for (let i = 0; i < 365; i++) {
           const checkDateStr = checkDate.toISOString().slice(0, 10);
           
           if (sortedDates.includes(checkDateStr)) {
             currentStreak++;
-            // Move to previous day
             checkDate.setDate(checkDate.getDate() - 1);
           } else {
             break;
@@ -436,15 +382,12 @@ function App() {
     };
   };
 
-  // Calculate stats
   const stats = calculateStats(habits);
   const safeHabits = Array.isArray(habits) ? habits : [];
 
-  // Mobile navigation handler
   const handleMobileViewChange = (view) => {
     setActiveView(view);
     
-    // Handle view changes for mobile navigation
     switch (view) {
       case 'habits':
         setShowAddForm(false);
@@ -479,7 +422,6 @@ function App() {
     );
   }
 
-  // Show authentication forms if user is not logged in
   if (!user) {
     return (
       <div className="auth-container">
@@ -676,7 +618,7 @@ function App() {
             setNoteHabit(null);
           }}
           onNoteAdded={() => {
-            loadHabits(); // Refresh habits to show new note
+            loadHabits();
           }}
         />
       )}

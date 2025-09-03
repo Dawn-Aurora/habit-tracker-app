@@ -1,28 +1,22 @@
-// Global variables
 let currentUser = null;
 let authToken = null;
 let habits = [];
 let currentEditingHabit = null;
 
-// API configuration
 const API_BASE_URL = 'http://localhost:5000/api';
 
-// DOM elements
 const authSection = document.getElementById('auth-section');
 const mainApp = document.getElementById('main-app');
 const loading = document.getElementById('loading');
 const loginForm = document.getElementById('login-form');
 const registerForm = document.getElementById('register-form');
 
-// Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     setupEventListeners();
 });
 
-// Initialize the application
 function initializeApp() {
-    // Check if user is already logged in
     const savedToken = localStorage.getItem('authToken');
     const savedUser = localStorage.getItem('user');
     
@@ -36,9 +30,7 @@ function initializeApp() {
     }
 }
 
-// Setup event listeners
 function setupEventListeners() {
-    // Auth form switching
     document.getElementById('switch-to-register').addEventListener('click', (e) => {
         e.preventDefault();
         showRegisterForm();
@@ -49,27 +41,22 @@ function setupEventListeners() {
         showLoginForm();
     });
     
-    // Auth form submissions
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
     document.getElementById('registerForm').addEventListener('submit', handleRegister);
     
-    // Main app event listeners
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
     document.getElementById('toggle-add-form').addEventListener('click', toggleAddHabitForm);
     document.getElementById('cancel-add').addEventListener('click', hideAddHabitForm);
     document.getElementById('habitForm').addEventListener('submit', handleAddHabit);
     
-    // Filter controls
     document.getElementById('filter-category').addEventListener('change', filterHabits);
     document.getElementById('filter-frequency').addEventListener('change', filterHabits);
     
-    // Edit modal
     document.getElementById('close-edit-modal').addEventListener('click', hideEditModal);
     document.getElementById('cancel-edit').addEventListener('click', hideEditModal);
     document.getElementById('editHabitForm').addEventListener('submit', handleEditHabit);
 }
 
-// Authentication functions
 function showAuthSection() {
     authSection.classList.remove('hidden');
     mainApp.classList.add('hidden');
@@ -104,7 +91,6 @@ function hideLoading() {
     loading.classList.add('hidden');
 }
 
-// Handle login
 async function handleLogin(e) {
     e.preventDefault();
     
@@ -138,7 +124,6 @@ async function handleLogin(e) {
             authToken = data.token;
             currentUser = data.user;
             
-            // Save to localStorage
             localStorage.setItem('authToken', authToken);
             localStorage.setItem('user', JSON.stringify(currentUser));
             
@@ -156,7 +141,6 @@ async function handleLogin(e) {
     hideLoading();
 }
 
-// Handle registration
 async function handleRegister(e) {
     e.preventDefault();
     
@@ -202,7 +186,6 @@ async function handleRegister(e) {
             showAlert('Registration successful! Please log in.', 'success');
             showLoginForm();
             
-            // Clear register form
             document.getElementById('registerForm').reset();
         } else {
             showAlert(data.message || 'Registration failed', 'error');
@@ -215,17 +198,14 @@ async function handleRegister(e) {
     hideLoading();
 }
 
-// Handle logout
 function handleLogout() {
     authToken = null;
     currentUser = null;
     habits = [];
     
-    // Clear localStorage
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     
-    // Reset forms
     document.getElementById('loginForm').reset();
     document.getElementById('registerForm').reset();
     
@@ -234,7 +214,6 @@ function handleLogout() {
     showLoginForm();
 }
 
-// Habit management functions
 async function loadHabits() {
     if (!authToken) return;
     
@@ -308,8 +287,6 @@ function updateStats() {
     document.getElementById('completed-today').textContent = completedToday;
     document.getElementById('success-rate').textContent = `${successRate}%`;
     
-    // For streak calculation, we'd need more data from the backend
-    // For now, we'll show a placeholder
     document.getElementById('current-streak').textContent = '0';
 }
 
@@ -561,7 +538,6 @@ function filterHabits() {
     `).join('');
 }
 
-// Utility functions
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -592,7 +568,6 @@ function showAlert(message, type = 'info') {
     
     alertContainer.appendChild(alertElement);
     
-    // Auto-remove alert after 5 seconds
     setTimeout(() => {
         const alert = document.getElementById(alertId);
         if (alert) {
@@ -601,7 +576,6 @@ function showAlert(message, type = 'info') {
     }, 5000);
 }
 
-// Close modal when clicking outside
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('edit-modal');
     if (event.target === modal) {
@@ -609,7 +583,6 @@ window.addEventListener('click', function(event) {
     }
 });
 
-// Handle escape key to close modal
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         hideEditModal();

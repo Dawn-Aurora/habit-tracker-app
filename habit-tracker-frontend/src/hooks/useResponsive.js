@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 
-// Custom hook for responsive design
 export function useResponsive() {
   const [screenSize, setScreenSize] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1024,
@@ -22,15 +21,12 @@ export function useResponsive() {
       const width = window.innerWidth;
       const height = window.innerHeight;
       
-      // Skip responsive updates if modal is open to prevent layout shifts
       if (window.__MODAL_OPEN__) {
         return;
       }
       
-      // Add debouncing to prevent rapid changes during modal operations
       const prevWidth = prevWidthRef.current;
       if (Math.abs(width - prevWidth) > 100 && Math.abs(width - prevWidth) < 600) {
-        // Delay the update for potential modal-related changes
         setTimeout(() => {
           if (!window.__MODAL_OPEN__) {
             updateScreenInfo();
@@ -58,10 +54,8 @@ export function useResponsive() {
       });
     };
 
-    // Initial check
     updateScreenInfo();
 
-    // Listen for resize events
     window.addEventListener('resize', updateScreenInfo);
     window.addEventListener('orientationchange', updateScreenInfo);
 
@@ -74,7 +68,6 @@ export function useResponsive() {
   return {
     ...screenSize,
     ...deviceInfo,
-    // Utility functions
     showMobileNav: deviceInfo.isMobile,
     showDesktopNav: !deviceInfo.isMobile,
     cardColumns: deviceInfo.isMobile ? 1 : deviceInfo.isTablet ? 2 : 3,
@@ -82,7 +75,6 @@ export function useResponsive() {
   };
 }
 
-// Custom hook for touch gestures
 export function useTouchGestures(element, options = {}) {
   const [gestureState, setGestureState] = useState({
     isSwipeLeft: false,
@@ -124,7 +116,6 @@ export function useTouchGestures(element, options = {}) {
       const absDeltaY = Math.abs(deltaY);
       
       if (absDeltaX > minSwipeDistance && absDeltaX > absDeltaY) {
-        // Horizontal swipe
         if (deltaX > 0) {
           setGestureState(prev => ({ ...prev, isSwipeRight: true }));
           options.onSwipeRight && options.onSwipeRight();
@@ -133,7 +124,6 @@ export function useTouchGestures(element, options = {}) {
           options.onSwipeLeft && options.onSwipeLeft();
         }
       } else if (absDeltaY > minSwipeDistance && absDeltaY > absDeltaX) {
-        // Vertical swipe
         if (deltaY > 0) {
           setGestureState(prev => ({ ...prev, isSwipeDown: true }));
           options.onSwipeDown && options.onSwipeDown();
@@ -143,7 +133,6 @@ export function useTouchGestures(element, options = {}) {
         }
       }
 
-      // Reset gesture state after a short delay
       setTimeout(() => {
         setGestureState({
           isSwipeLeft: false,
@@ -167,7 +156,6 @@ export function useTouchGestures(element, options = {}) {
   return gestureState;
 }
 
-// Hook for detecting PWA capabilities
 export function usePWA() {
   const [pwaInfo, setPwaInfo] = useState({
     isInstallable: false,
@@ -176,13 +164,11 @@ export function usePWA() {
   });
 
   useEffect(() => {
-    // Check if app is already installed
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
                        window.navigator.standalone === true;
     
     setPwaInfo(prev => ({ ...prev, isInstalled }));
 
-    // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setPwaInfo(prev => ({
