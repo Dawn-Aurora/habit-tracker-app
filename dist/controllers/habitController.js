@@ -41,92 +41,174 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [op[0] & 2, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHabitCompletionsForDate = exports.removeHabitCompletion = exports.addHabitCompletion = exports.getHabitMetrics = exports.getHabitsByTag = exports.addHabitNote = exports.markHabitCompleted = exports.deleteHabit = exports.updateHabit = exports.createHabit = exports.getHabits = void 0;
-const dotenv = __importStar(require("dotenv"));
+var dotenv = __importStar(require("dotenv"));
 dotenv.config();
-const mockDataClient = __importStar(require("../mockDataClient"));
-const sharepointClient = __importStar(require("../sharepointClient"));
+var mockDataClient = __importStar(require("../mockDataClient"));
+var sharepointClient = __importStar(require("../sharepointClient"));
 // Enhanced fallback logic: try SharePoint, fallback to mock on error
-const useMock = process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DATA === 'true';
+var useMock = process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DATA === 'true';
 // Helper function to filter habits by user
-const filterHabitsByUser = (habits, userId) => {
+var filterHabitsByUser = function (habits, userId) {
     if (!userId) {
         // For backward compatibility, return all habits if no user ID
         return habits;
     }
     // Only return habits that belong to this specific user
-    return habits.filter(habit => habit.userId === userId);
+    return habits.filter(function (habit) { return habit.userId === userId; });
 };
-const dataClient = useMock
+var dataClient = useMock
     ? {
-        getHabits(userId) {
-            return __awaiter(this, void 0, void 0, function* () {
-                const allHabits = yield mockDataClient.getHabits();
-                return filterHabitsByUser(allHabits, userId);
+        getHabits: function (userId) {
+            return __awaiter(this, void 0, void 0, function () {
+                var allHabits;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, mockDataClient.getHabits()];
+                        case 1:
+                            allHabits = _a.sent();
+                            return [2 /*return*/, filterHabitsByUser(allHabits, userId)];
+                    }
+                });
             });
         },
-        createHabit(name, completedDate, completionsStr, expectedFrequency, userId) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return yield mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
+        createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
             });
         },
-        updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return yield mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
+        updateHabit: function (id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
             });
         },
-        deleteHabit(id, userId) {
-            return __awaiter(this, void 0, void 0, function* () {
-                return yield mockDataClient.deleteHabit(id, userId);
+        deleteHabit: function (id, userId) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, mockDataClient.deleteHabit(id, userId)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
             });
         }
     }
     : {
-        getHabits(userId) {
-            return __awaiter(this, void 0, void 0, function* () {
-                try {
-                    return yield sharepointClient.getHabits(userId);
-                }
-                catch (e) {
-                    const allHabits = yield mockDataClient.getHabits();
-                    return filterHabitsByUser(allHabits, userId);
-                }
+        getHabits: function (userId) {
+            return __awaiter(this, void 0, void 0, function () {
+                var e_1, allHabits;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 4]);
+                            return [4 /*yield*/, sharepointClient.getHabits(userId)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                        case 2:
+                            e_1 = _a.sent();
+                            return [4 /*yield*/, mockDataClient.getHabits()];
+                        case 3:
+                            allHabits = _a.sent();
+                            return [2 /*return*/, filterHabitsByUser(allHabits, userId)];
+                        case 4: return [2 /*return*/];
+                    }
+                });
             });
         },
-        createHabit(name, completedDate, completionsStr, expectedFrequency, userId) {
-            return __awaiter(this, void 0, void 0, function* () {
-                try {
-                    return yield sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId);
-                }
-                catch (e) {
-                    return yield mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
-                }
+        createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId) {
+            return __awaiter(this, void 0, void 0, function () {
+                var e_2;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 4]);
+                            return [4 /*yield*/, sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                        case 2:
+                            e_2 = _a.sent();
+                            return [4 /*yield*/, mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId)];
+                        case 3: return [2 /*return*/, _a.sent()];
+                        case 4: return [2 /*return*/];
+                    }
+                });
             });
         },
-        updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
-            return __awaiter(this, void 0, void 0, function* () {
-                try {
-                    return yield sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency);
-                }
-                catch (e) {
-                    return yield mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
-                }
+        updateHabit: function (id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
+            return __awaiter(this, void 0, void 0, function () {
+                var e_3;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 4]);
+                            return [4 /*yield*/, sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                        case 2:
+                            e_3 = _a.sent();
+                            return [4 /*yield*/, mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId)];
+                        case 3: return [2 /*return*/, _a.sent()];
+                        case 4: return [2 /*return*/];
+                    }
+                });
             });
         },
-        deleteHabit(id) {
-            return __awaiter(this, void 0, void 0, function* () {
-                try {
-                    return yield sharepointClient.deleteHabit(id);
-                }
-                catch (e) {
-                    return yield mockDataClient.deleteHabit(id);
-                }
+        deleteHabit: function (id) {
+            return __awaiter(this, void 0, void 0, function () {
+                var e_4;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            _a.trys.push([0, 2, , 4]);
+                            return [4 /*yield*/, sharepointClient.deleteHabit(id)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                        case 2:
+                            e_4 = _a.sent();
+                            return [4 /*yield*/, mockDataClient.deleteHabit(id)];
+                        case 3: return [2 /*return*/, _a.sent()];
+                        case 4: return [2 /*return*/];
+                    }
+                });
             });
         }
     };
-const validation_1 = require("../utils/validation");
-const handleError = (error, res) => {
+var validation_1 = require("../utils/validation");
+var handleError = function (error, res) {
     if (error instanceof validation_1.ValidationError) {
         return res.status(400).json({
             status: 'error',
@@ -156,7 +238,8 @@ const handleError = (error, res) => {
     });
 };
 // Helper function to safely parse JSON or return empty array
-const safeJsonParse = (value, fallback = []) => {
+var safeJsonParse = function (value, fallback) {
+    if (fallback === void 0) { fallback = []; }
     if (!value || value === '""' || value === '=&quot;&quot;' || value === '[]')
         return fallback;
     try {
@@ -167,7 +250,8 @@ const safeJsonParse = (value, fallback = []) => {
     }
 };
 // Helper function to safely split strings or return empty array
-const safeSplit = (value, fallback = []) => {
+var safeSplit = function (value, fallback) {
+    if (fallback === void 0) { fallback = []; }
     if (!value || value === '""' || value === '=&quot;&quot;')
         return fallback;
     if (Array.isArray(value))
@@ -175,8 +259,8 @@ const safeSplit = (value, fallback = []) => {
     return value.split(',').filter(Boolean);
 };
 // Helper function to get existing field value safely
-const getExistingValue = (field, habit) => {
-    const spField = habit[field] || habit[field.charAt(0).toUpperCase() + field.slice(1)];
+var getExistingValue = function (field, habit) {
+    var spField = habit[field] || habit[field.charAt(0).toUpperCase() + field.slice(1)];
     if (spField && spField !== '=&quot;&quot;' && spField !== '""') {
         if (field === 'notes' || field === 'Notes') {
             try {
@@ -199,478 +283,576 @@ function getHabitName(habit, fallbackName) {
     }
     return habit.Name || habit.Title || habit.name || fallbackName || '';
 }
-const getHabits = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+var getHabits = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var userId, habits, transformedHabits, error_1;
     var _a;
-    try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
-        const habits = yield dataClient.getHabits(userId);
-        const transformedHabits = habits.map((habit) => {
-            // Parse expectedFrequency - could be string, number, or JSON
-            let expectedFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
-            if (typeof expectedFrequency === 'string' && expectedFrequency.startsWith('{')) {
-                try {
-                    expectedFrequency = JSON.parse(expectedFrequency);
-                }
-                catch (e) {
-                    // Keep as string if JSON parsing fails
-                }
-            }
-            return {
-                id: habit.id,
-                name: getHabitName(habit),
-                completedDates: habit.CompletedDates ? safeSplit(habit.CompletedDates) : habit.completedDates || [],
-                tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
-                notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
-                startDate: habit.StartDate || habit.startDate || '',
-                expectedFrequency: expectedFrequency,
-                userId: habit.userId
-            };
-        });
-        transformedHabits.forEach((habit) => {
-            (0, validation_1.validateHabitId)(habit.id);
-            (0, validation_1.validateHabitName)(habit.name);
-            if (habit.completedDates.length > 0) {
-                (0, validation_1.validateCompletedDates)(habit.completedDates);
-            }
-        });
-        res.json({
-            status: 'success',
-            data: transformedHabits
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                habits = _b.sent();
+                transformedHabits = habits.map(function (habit) {
+                    // Parse expectedFrequency - could be string, number, or JSON
+                    var expectedFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+                    if (typeof expectedFrequency === 'string' && expectedFrequency.startsWith('{')) {
+                        try {
+                            expectedFrequency = JSON.parse(expectedFrequency);
+                        }
+                        catch (e) {
+                            // Keep as string if JSON parsing fails
+                        }
+                    }
+                    return {
+                        id: habit.id,
+                        name: getHabitName(habit),
+                        completedDates: habit.CompletedDates ? safeSplit(habit.CompletedDates) : habit.completedDates || [],
+                        tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
+                        notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
+                        startDate: habit.StartDate || habit.startDate || '',
+                        expectedFrequency: expectedFrequency,
+                        userId: habit.userId
+                    };
+                });
+                transformedHabits.forEach(function (habit) {
+                    (0, validation_1.validateHabitId)(habit.id);
+                    (0, validation_1.validateHabitName)(habit.name);
+                    if (habit.completedDates.length > 0) {
+                        (0, validation_1.validateCompletedDates)(habit.completedDates);
+                    }
+                });
+                res.json({
+                    status: 'success',
+                    data: transformedHabits
+                });
+                return [3 /*break*/, 3];
+            case 2:
+                error_1 = _b.sent();
+                handleError(error_1, res);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
 exports.getHabits = getHabits;
-const createHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    try {
-        const { name, frequency, expectedFrequency } = req.body;
-        (0, validation_1.validateHabitName)(name);
-        const sanitizedName = (0, validation_1.sanitizeHabitName)(name);
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
-        // Handle both structured and legacy frequency
-        let frequencyToStore = expectedFrequency || frequency || '';
-        // If it's a structured frequency object, serialize it as JSON for SharePoint
-        if (typeof expectedFrequency === 'object' && expectedFrequency !== null) {
-            frequencyToStore = JSON.stringify(expectedFrequency);
+var createHabit = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, name_1, frequency, expectedFrequency, sanitizedName, userId, frequencyToStore, result, newHabit, error_2;
+    var _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                _c.trys.push([0, 2, , 3]);
+                _a = req.body, name_1 = _a.name, frequency = _a.frequency, expectedFrequency = _a.expectedFrequency;
+                (0, validation_1.validateHabitName)(name_1);
+                sanitizedName = (0, validation_1.sanitizeHabitName)(name_1);
+                userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
+                frequencyToStore = expectedFrequency || frequency || '';
+                // If it's a structured frequency object, serialize it as JSON for SharePoint
+                if (typeof expectedFrequency === 'object' && expectedFrequency !== null) {
+                    frequencyToStore = JSON.stringify(expectedFrequency);
+                }
+                return [4 /*yield*/, dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId)];
+            case 1:
+                result = _c.sent();
+                newHabit = {
+                    id: result.id,
+                    name: getHabitName(result, sanitizedName),
+                    completedDates: (result.fields && result.fields.CompletedDates)
+                        ? result.fields.CompletedDates.split(',').filter(Boolean)
+                        : result.completedDates || [],
+                    expectedFrequency: expectedFrequency || frequency || '', // Return the original format
+                    userId: result.userId || userId
+                };
+                (0, validation_1.validateHabitId)(newHabit.id);
+                (0, validation_1.validateHabitName)(newHabit.name);
+                res.status(201).json({
+                    status: 'success',
+                    data: newHabit
+                });
+                return [3 /*break*/, 3];
+            case 2:
+                error_2 = _c.sent();
+                handleError(error_2, res);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
         }
-        // Pass frequency to dataClient as expectedFrequency
-        const result = yield dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId);
-        const newHabit = {
-            id: result.id,
-            name: getHabitName(result, sanitizedName),
-            completedDates: (result.fields && result.fields.CompletedDates)
-                ? result.fields.CompletedDates.split(',').filter(Boolean)
-                : result.completedDates || [],
-            expectedFrequency: expectedFrequency || frequency || '', // Return the original format
-            userId: result.userId || userId
-        };
-        (0, validation_1.validateHabitId)(newHabit.id);
-        (0, validation_1.validateHabitName)(newHabit.name);
-        res.status(201).json({
-            status: 'success',
-            data: newHabit
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    });
+}); };
 exports.createHabit = createHabit;
-const updateHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    try {
-        const { id } = req.params;
-        const { name, completedDates, completions, tags, notes, expectedFrequency } = req.body;
-        (0, validation_1.validateHabitId)(id);
-        // Get userId from authenticated user for proper filtering
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        // Fetch the current habit to preserve existing fields (filtered by user)
-        const allHabits = yield dataClient.getHabits(userId);
-        const currentHabit = allHabits.find((h) => h.id === id);
-        if (!currentHabit)
-            throw new validation_1.NotFoundError('Habit not found');
-        // Only validate name if provided and not blank
-        if (name !== undefined && name !== "") {
-            (0, validation_1.validateHabitName)(name);
+var updateHabit = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id_1, _a, name_2, completedDates, completions, tags, notes, expectedFrequency, userId, allHabits, currentHabit, inputCompletions, finalName, finalCompletedDates, finalTags, finalNotes, finalExpectedFrequency, completionsStr, tagsStr, notesStr, result, error_3;
+    var _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                _c.trys.push([0, 3, , 4]);
+                id_1 = req.params.id;
+                _a = req.body, name_2 = _a.name, completedDates = _a.completedDates, completions = _a.completions, tags = _a.tags, notes = _a.notes, expectedFrequency = _a.expectedFrequency;
+                (0, validation_1.validateHabitId)(id_1);
+                userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                allHabits = _c.sent();
+                currentHabit = allHabits.find(function (h) { return h.id === id_1; });
+                if (!currentHabit)
+                    throw new validation_1.NotFoundError('Habit not found');
+                // Only validate name if provided and not blank
+                if (name_2 !== undefined && name_2 !== "") {
+                    (0, validation_1.validateHabitName)(name_2);
+                }
+                inputCompletions = completions || completedDates;
+                if (inputCompletions !== undefined) {
+                    (0, validation_1.validateCompletedDates)(inputCompletions);
+                }
+                finalName = name_2 !== undefined ? (0, validation_1.sanitizeHabitName)(name_2) : getHabitName(currentHabit);
+                finalCompletedDates = inputCompletions !== undefined
+                    ? (Array.isArray(inputCompletions) ? inputCompletions : (inputCompletions ? inputCompletions.split(',').filter(Boolean) : []))
+                    : getExistingValue('completedDates', currentHabit);
+                finalTags = tags !== undefined
+                    ? (Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map(function (t) { return t.trim(); }).filter(Boolean) : []))
+                    : getExistingValue('tags', currentHabit);
+                finalNotes = notes !== undefined
+                    ? (Array.isArray(notes) ? notes : (notes ? [notes] : []))
+                    : getExistingValue('notes', currentHabit);
+                finalExpectedFrequency = expectedFrequency !== undefined
+                    ? String(expectedFrequency)
+                    : (currentHabit.ExpectedFrequency || currentHabit.expectedFrequency || '');
+                completionsStr = finalCompletedDates.join(',');
+                tagsStr = finalTags.join(',');
+                notesStr = JSON.stringify(finalNotes);
+                return [4 /*yield*/, dataClient.updateHabit(id_1, finalName, completionsStr, tagsStr, notesStr, finalExpectedFrequency, userId)];
+            case 2:
+                result = _c.sent();
+                res.json({
+                    status: 'success',
+                    data: {
+                        id: id_1,
+                        name: finalName,
+                        completedDates: finalCompletedDates,
+                        tags: finalTags,
+                        notes: finalNotes,
+                        expectedFrequency: finalExpectedFrequency
+                    }
+                });
+                return [3 /*break*/, 4];
+            case 3:
+                error_3 = _c.sent();
+                handleError(error_3, res);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
         }
-        // Handle both completedDates and completions (for backward compatibility)
-        const inputCompletions = completions || completedDates;
-        if (inputCompletions !== undefined) {
-            (0, validation_1.validateCompletedDates)(inputCompletions);
-        }
-        // Preserve existing data if not updating
-        const finalName = name !== undefined ? (0, validation_1.sanitizeHabitName)(name) : getHabitName(currentHabit);
-        const finalCompletedDates = inputCompletions !== undefined
-            ? (Array.isArray(inputCompletions) ? inputCompletions : (inputCompletions ? inputCompletions.split(',').filter(Boolean) : []))
-            : getExistingValue('completedDates', currentHabit);
-        const finalTags = tags !== undefined
-            ? (Array.isArray(tags) ? tags : (tags ? String(tags).split(',').map((t) => t.trim()).filter(Boolean) : []))
-            : getExistingValue('tags', currentHabit);
-        const finalNotes = notes !== undefined
-            ? (Array.isArray(notes) ? notes : (notes ? [notes] : []))
-            : getExistingValue('notes', currentHabit);
-        const finalExpectedFrequency = expectedFrequency !== undefined
-            ? String(expectedFrequency)
-            : (currentHabit.ExpectedFrequency || currentHabit.expectedFrequency || '');
-        // Convert arrays to strings for SharePoint
-        const completionsStr = finalCompletedDates.join(',');
-        const tagsStr = finalTags.join(',');
-        const notesStr = JSON.stringify(finalNotes);
-        // Update with all fields preserved
-        const result = yield dataClient.updateHabit(id, finalName, completionsStr, tagsStr, notesStr, finalExpectedFrequency, userId);
-        res.json({
-            status: 'success',
-            data: {
-                id,
-                name: finalName,
-                completedDates: finalCompletedDates,
-                tags: finalTags,
-                notes: finalNotes,
-                expectedFrequency: finalExpectedFrequency
-            }
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    });
+}); };
 exports.updateHabit = updateHabit;
-const deleteHabit = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+var deleteHabit = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id, userId, error_4;
     var _a;
-    try {
-        const { id } = req.params;
-        (0, validation_1.validateHabitId)(id);
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
-        yield dataClient.deleteHabit(id, userId);
-        res.status(200).json({ status: 'success', data: { id } });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                id = req.params.id;
+                (0, validation_1.validateHabitId)(id);
+                userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+                return [4 /*yield*/, dataClient.deleteHabit(id, userId)];
+            case 1:
+                _b.sent();
+                res.status(200).json({ status: 'success', data: { id: id } });
+                return [3 /*break*/, 3];
+            case 2:
+                error_4 = _b.sent();
+                handleError(error_4, res);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
 exports.deleteHabit = deleteHabit;
-const markHabitCompleted = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+var markHabitCompleted = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id_2, date, userId, completedTimestamp, habits, habit, completedDates, existingTags, existingNotes, existingFrequency, completionsString, tagsString, notesString, error_5;
     var _a;
-    try {
-        const { id } = req.params;
-        const { date } = req.body;
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
-        (0, validation_1.validateHabitId)(id);
-        // Use full timestamp instead of date-only to allow multiple completions per day
-        const completedTimestamp = date || new Date().toISOString();
-        const habits = yield dataClient.getHabits(userId);
-        const habit = habits.find((h) => h.id === id);
-        if (!habit)
-            return res.status(404).json({ status: 'error', message: 'Habit not found' });
-        const completedDates = getExistingValue('completedDates', habit);
-        // Always add the new completion (no duplicate check for timestamps)
-        completedDates.push(completedTimestamp);
-        // Preserve all existing data
-        const existingTags = getExistingValue('tags', habit);
-        const existingNotes = getExistingValue('notes', habit);
-        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
-        // Convert to strings for SharePoint
-        const completionsString = completedDates.join(',');
-        const tagsString = existingTags.join(',');
-        const notesString = JSON.stringify(existingNotes);
-        yield dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
-        res.json({
-            status: 'success',
-            data: {
-                id,
-                name: getHabitName(habit),
-                completedDates,
-                tags: existingTags,
-                notes: existingNotes,
-                expectedFrequency: existingFrequency
-            }
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 3, , 4]);
+                id_2 = req.params.id;
+                date = req.body.date;
+                userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+                (0, validation_1.validateHabitId)(id_2);
+                completedTimestamp = date || new Date().toISOString();
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                habits = _b.sent();
+                habit = habits.find(function (h) { return h.id === id_2; });
+                if (!habit)
+                    return [2 /*return*/, res.status(404).json({ status: 'error', message: 'Habit not found' })];
+                completedDates = getExistingValue('completedDates', habit);
+                // Always add the new completion (no duplicate check for timestamps)
+                completedDates.push(completedTimestamp);
+                existingTags = getExistingValue('tags', habit);
+                existingNotes = getExistingValue('notes', habit);
+                existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+                completionsString = completedDates.join(',');
+                tagsString = existingTags.join(',');
+                notesString = JSON.stringify(existingNotes);
+                return [4 /*yield*/, dataClient.updateHabit(id_2, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId)];
+            case 2:
+                _b.sent();
+                res.json({
+                    status: 'success',
+                    data: {
+                        id: id_2,
+                        name: getHabitName(habit),
+                        completedDates: completedDates,
+                        tags: existingTags,
+                        notes: existingNotes,
+                        expectedFrequency: existingFrequency
+                    }
+                });
+                return [3 /*break*/, 4];
+            case 3:
+                error_5 = _b.sent();
+                handleError(error_5, res);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
 exports.markHabitCompleted = markHabitCompleted;
-const addHabitNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    try {
-        const { id } = req.params;
-        const { note, text, date } = req.body;
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
-        (0, validation_1.validateHabitId)(id);
-        const noteText = note || text;
-        if (!noteText)
-            return res.status(400).json({ status: 'error', message: 'Note text required' });
-        const habits = yield dataClient.getHabits(userId);
-        const habit = habits.find((h) => h.id === id);
-        if (!habit)
-            return res.status(404).json({ status: 'error', message: 'Habit not found' });
-        // Get all existing data
-        const existingNotes = getExistingValue('notes', habit);
-        const existingCompletedDates = getExistingValue('completedDates', habit);
-        const existingTags = getExistingValue('tags', habit);
-        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
-        // Add new note with full timestamp - ensure we preserve the full ISO string
-        const fullTimestamp = date || new Date().toISOString();
-        existingNotes.push({
-            date: fullTimestamp,
-            text: noteText
-        });
-        // Convert arrays to strings for SharePoint
-        const completionsString = existingCompletedDates.join(',');
-        const tagsString = existingTags.join(',');
-        const notesString = JSON.stringify(existingNotes);
-        yield dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
-        res.json({
-            status: 'success',
-            data: {
-                id,
-                name: getHabitName(habit),
-                completedDates: existingCompletedDates,
-                tags: existingTags,
-                notes: existingNotes,
-                expectedFrequency: existingFrequency
-            }
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+var addHabitNote = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id_3, _a, note, text, date, userId, noteText, habits, habit, existingNotes, existingCompletedDates, existingTags, existingFrequency, fullTimestamp, completionsString, tagsString, notesString, error_6;
+    var _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                _c.trys.push([0, 3, , 4]);
+                id_3 = req.params.id;
+                _a = req.body, note = _a.note, text = _a.text, date = _a.date;
+                userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
+                (0, validation_1.validateHabitId)(id_3);
+                noteText = note || text;
+                if (!noteText)
+                    return [2 /*return*/, res.status(400).json({ status: 'error', message: 'Note text required' })];
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                habits = _c.sent();
+                habit = habits.find(function (h) { return h.id === id_3; });
+                if (!habit)
+                    return [2 /*return*/, res.status(404).json({ status: 'error', message: 'Habit not found' })];
+                existingNotes = getExistingValue('notes', habit);
+                existingCompletedDates = getExistingValue('completedDates', habit);
+                existingTags = getExistingValue('tags', habit);
+                existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+                fullTimestamp = date || new Date().toISOString();
+                existingNotes.push({
+                    date: fullTimestamp,
+                    text: noteText
+                });
+                completionsString = existingCompletedDates.join(',');
+                tagsString = existingTags.join(',');
+                notesString = JSON.stringify(existingNotes);
+                return [4 /*yield*/, dataClient.updateHabit(id_3, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId)];
+            case 2:
+                _c.sent();
+                res.json({
+                    status: 'success',
+                    data: {
+                        id: id_3,
+                        name: getHabitName(habit),
+                        completedDates: existingCompletedDates,
+                        tags: existingTags,
+                        notes: existingNotes,
+                        expectedFrequency: existingFrequency
+                    }
+                });
+                return [3 /*break*/, 4];
+            case 3:
+                error_6 = _c.sent();
+                handleError(error_6, res);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
 exports.addHabitNote = addHabitNote;
-const getHabitsByTag = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { tag } = req.query;
-        const habits = yield dataClient.getHabits();
-        const filtered = tag ? habits.filter((h) => h.tags && h.tags.includes(tag)) : habits;
-        res.json({ status: 'success', data: filtered });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+var getHabitsByTag = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var tag_1, habits, filtered, error_7;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                tag_1 = req.query.tag;
+                return [4 /*yield*/, dataClient.getHabits()];
+            case 1:
+                habits = _a.sent();
+                filtered = tag_1 ? habits.filter(function (h) { return h.tags && h.tags.includes(tag_1); }) : habits;
+                res.json({ status: 'success', data: filtered });
+                return [3 /*break*/, 3];
+            case 2:
+                error_7 = _a.sent();
+                handleError(error_7, res);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
 exports.getHabitsByTag = getHabitsByTag;
-const getHabitMetrics = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+var getHabitMetrics = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id_4, userId, habits, habit, parseExpectedFrequency, completedDates, totalCompletions, expectedFreq, completionRate, today, dayOfWeek, monday_1, sunday_1, thisWeekCompletions, daysElapsedThisWeek, expectedCompletionsThisWeek, currentStreak, dates, current, _i, dates_1, d, metrics, error_8;
     var _a;
-    try {
-        const { id } = req.params;
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get userId from authenticated user
-        (0, validation_1.validateHabitId)(id);
-        const habits = yield dataClient.getHabits(userId);
-        const habit = habits.find((h) => h.id === id);
-        if (!habit)
-            throw new validation_1.NotFoundError('Habit not found');
-        // Helper function to parse expected frequency
-        const parseExpectedFrequency = (frequency) => {
-            if (!frequency)
-                return { timesPerWeek: 7 }; // Default to daily
-            const freq = frequency.toLowerCase();
-            if (freq.includes('daily') || freq === 'daily')
-                return { timesPerWeek: 7 };
-            if (freq.includes('weekly') || freq === 'weekly')
-                return { timesPerWeek: 1 };
-            // Parse patterns like "2 times/week", "3 times per week", etc.
-            const match = freq.match(/(\d+)\s*times?\s*(?:per\s*|\/)\s*week/);
-            if (match)
-                return { timesPerWeek: parseInt(match[1]) };
-            // Parse patterns like "every 2 days", "every 3 days"
-            const everyMatch = freq.match(/every\s*(\d+)\s*days?/);
-            if (everyMatch) {
-                const days = parseInt(everyMatch[1]);
-                return { timesPerWeek: Math.round(7 / days) };
-            }
-            return { timesPerWeek: 7 }; // Default to daily if can't parse
-        };
-        // Calculate metrics directly without the complex Habit model logic
-        const completedDates = habit.completedDates || [];
-        const totalCompletions = completedDates.length;
-        const expectedFreq = parseExpectedFrequency(habit.expectedFrequency || habit.ExpectedFrequency || 'daily');
-        // Calculate completion rate for this week
-        let completionRate = 0;
-        if (totalCompletions > 0) {
-            // Calculate completion rate for this week (Monday to Sunday)
-            const today = new Date();
-            const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
-            // Get Monday of this week
-            const monday = new Date(today);
-            monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-            monday.setHours(0, 0, 0, 0);
-            // Get Sunday of this week
-            const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
-            sunday.setHours(23, 59, 59, 999);
-            // Count completions in this week
-            const thisWeekCompletions = completedDates.filter((dateStr) => {
-                const completionDate = new Date(dateStr);
-                return completionDate >= monday && completionDate <= sunday;
-            }).length;
-            // Calculate days elapsed in this week (up to today)
-            const daysElapsedThisWeek = Math.min(Math.floor((today.getTime() - monday.getTime()) / (1000 * 60 * 60 * 24)) + 1, 7);
-            // Calculate expected completions for this week based on actual frequency
-            const expectedCompletionsThisWeek = expectedFreq.timesPerWeek;
-            if (expectedCompletionsThisWeek > 0) {
-                completionRate = thisWeekCompletions / expectedCompletionsThisWeek; // Return as decimal (0.0 to 1.0)
-                // Cap at 1.0 (100%) if user exceeded their goal
-                completionRate = Math.min(completionRate, 1.0);
-            }
-        }
-        // Calculate current streak
-        let currentStreak = 0;
-        if (completedDates.length > 0) {
-            const dates = completedDates.map((d) => new Date(d)).sort((a, b) => b.getTime() - a.getTime());
-            let current = new Date();
-            current.setHours(0, 0, 0, 0); // Reset to start of day
-            for (let d of dates) {
-                d.setHours(0, 0, 0, 0); // Reset to start of day
-                if (d.getTime() === current.getTime()) {
-                    currentStreak++;
-                    current.setDate(current.getDate() - 1);
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                id_4 = req.params.id;
+                userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+                (0, validation_1.validateHabitId)(id_4);
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                habits = _b.sent();
+                habit = habits.find(function (h) { return h.id === id_4; });
+                if (!habit)
+                    throw new validation_1.NotFoundError('Habit not found');
+                parseExpectedFrequency = function (frequency) {
+                    if (!frequency)
+                        return { timesPerWeek: 7 }; // Default to daily
+                    var freq = frequency.toLowerCase();
+                    if (freq.includes('daily') || freq === 'daily')
+                        return { timesPerWeek: 7 };
+                    if (freq.includes('weekly') || freq === 'weekly')
+                        return { timesPerWeek: 1 };
+                    // Parse patterns like "2 times/week", "3 times per week", etc.
+                    var match = freq.match(/(\d+)\s*times?\s*(?:per\s*|\/)\s*week/);
+                    if (match)
+                        return { timesPerWeek: parseInt(match[1]) };
+                    // Parse patterns like "every 2 days", "every 3 days"
+                    var everyMatch = freq.match(/every\s*(\d+)\s*days?/);
+                    if (everyMatch) {
+                        var days = parseInt(everyMatch[1]);
+                        return { timesPerWeek: Math.round(7 / days) };
+                    }
+                    return { timesPerWeek: 7 }; // Default to daily if can't parse
+                };
+                completedDates = habit.completedDates || [];
+                totalCompletions = completedDates.length;
+                expectedFreq = parseExpectedFrequency(habit.expectedFrequency || habit.ExpectedFrequency || 'daily');
+                completionRate = 0;
+                if (totalCompletions > 0) {
+                    today = new Date();
+                    dayOfWeek = today.getDay();
+                    monday_1 = new Date(today);
+                    monday_1.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+                    monday_1.setHours(0, 0, 0, 0);
+                    sunday_1 = new Date(monday_1);
+                    sunday_1.setDate(monday_1.getDate() + 6);
+                    sunday_1.setHours(23, 59, 59, 999);
+                    thisWeekCompletions = completedDates.filter(function (dateStr) {
+                        var completionDate = new Date(dateStr);
+                        return completionDate >= monday_1 && completionDate <= sunday_1;
+                    }).length;
+                    daysElapsedThisWeek = Math.min(Math.floor((today.getTime() - monday_1.getTime()) / (1000 * 60 * 60 * 24)) + 1, 7);
+                    expectedCompletionsThisWeek = expectedFreq.timesPerWeek;
+                    if (expectedCompletionsThisWeek > 0) {
+                        completionRate = thisWeekCompletions / expectedCompletionsThisWeek; // Return as decimal (0.0 to 1.0)
+                        // Cap at 1.0 (100%) if user exceeded their goal
+                        completionRate = Math.min(completionRate, 1.0);
+                    }
                 }
-                else {
-                    break;
+                currentStreak = 0;
+                if (completedDates.length > 0) {
+                    dates = completedDates.map(function (d) { return new Date(d); }).sort(function (a, b) { return b.getTime() - a.getTime(); });
+                    current = new Date();
+                    current.setHours(0, 0, 0, 0); // Reset to start of day
+                    for (_i = 0, dates_1 = dates; _i < dates_1.length; _i++) {
+                        d = dates_1[_i];
+                        d.setHours(0, 0, 0, 0); // Reset to start of day
+                        if (d.getTime() === current.getTime()) {
+                            currentStreak++;
+                            current.setDate(current.getDate() - 1);
+                        }
+                        else {
+                            break;
+                        }
+                    }
                 }
-            }
+                metrics = {
+                    currentStreak: currentStreak,
+                    totalCompletions: totalCompletions,
+                    completionRate: completionRate,
+                    expectedFrequency: habit.expectedFrequency || habit.ExpectedFrequency || ''
+                };
+                res.json({ status: 'success', data: metrics });
+                return [3 /*break*/, 3];
+            case 2:
+                error_8 = _b.sent();
+                handleError(error_8, res);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
         }
-        const metrics = {
-            currentStreak: currentStreak,
-            totalCompletions: totalCompletions,
-            completionRate: completionRate,
-            expectedFrequency: habit.expectedFrequency || habit.ExpectedFrequency || ''
-        };
-        res.json({ status: 'success', data: metrics });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    });
+}); };
 exports.getHabitMetrics = getHabitMetrics;
 // New endpoints for enhanced frequency system
-const addHabitCompletion = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+var addHabitCompletion = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id_5, date, userId, completionDate, habits, habit, completedDates, existingTags, existingNotes, existingFrequency, completionsString, tagsString, notesString, error_9;
     var _a;
-    try {
-        const { id } = req.params;
-        const { date } = req.body;
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        (0, validation_1.validateHabitId)(id);
-        const completionDate = date || new Date().toISOString();
-        const habits = yield dataClient.getHabits(userId);
-        const habit = habits.find((h) => h.id === id);
-        if (!habit)
-            return res.status(404).json({ status: 'error', message: 'Habit not found' });
-        // Get existing completions
-        const completedDates = getExistingValue('completedDates', habit);
-        // Add new completion (allowing multiple per day)
-        completedDates.push(completionDate);
-        // Preserve existing data
-        const existingTags = getExistingValue('tags', habit);
-        const existingNotes = getExistingValue('notes', habit);
-        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
-        // Convert to strings for SharePoint
-        const completionsString = completedDates.join(',');
-        const tagsString = existingTags.join(',');
-        const notesString = JSON.stringify(existingNotes);
-        yield dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
-        res.json({
-            status: 'success',
-            data: {
-                id,
-                completedDates,
-                message: 'Completion added successfully'
-            }
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 3, , 4]);
+                id_5 = req.params.id;
+                date = req.body.date;
+                userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+                (0, validation_1.validateHabitId)(id_5);
+                completionDate = date || new Date().toISOString();
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                habits = _b.sent();
+                habit = habits.find(function (h) { return h.id === id_5; });
+                if (!habit)
+                    return [2 /*return*/, res.status(404).json({ status: 'error', message: 'Habit not found' })];
+                completedDates = getExistingValue('completedDates', habit);
+                // Add new completion (allowing multiple per day)
+                completedDates.push(completionDate);
+                existingTags = getExistingValue('tags', habit);
+                existingNotes = getExistingValue('notes', habit);
+                existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+                completionsString = completedDates.join(',');
+                tagsString = existingTags.join(',');
+                notesString = JSON.stringify(existingNotes);
+                return [4 /*yield*/, dataClient.updateHabit(id_5, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId)];
+            case 2:
+                _b.sent();
+                res.json({
+                    status: 'success',
+                    data: {
+                        id: id_5,
+                        completedDates: completedDates,
+                        message: 'Completion added successfully'
+                    }
+                });
+                return [3 /*break*/, 4];
+            case 3:
+                error_9 = _b.sent();
+                handleError(error_9, res);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
 exports.addHabitCompletion = addHabitCompletion;
-const removeHabitCompletion = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+var removeHabitCompletion = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id_6, date_1, userId, habits, habit, completedDates, index, today_1, todayCompletions, existingTags, existingNotes, existingFrequency, completionsString, tagsString, notesString, error_10;
     var _a;
-    try {
-        const { id } = req.params;
-        const { date } = req.body;
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        (0, validation_1.validateHabitId)(id);
-        const habits = yield dataClient.getHabits(userId);
-        const habit = habits.find((h) => h.id === id);
-        if (!habit)
-            return res.status(404).json({ status: 'error', message: 'Habit not found' });
-        // Get existing completions
-        const completedDates = getExistingValue('completedDates', habit);
-        if (date) {
-            // Remove specific completion by exact timestamp or date
-            const index = completedDates.findIndex((completion) => {
-                // Try exact match first (for timestamp), then date match
-                return completion === date || completion.slice(0, 10) === date.slice(0, 10);
-            });
-            if (index !== -1) {
-                completedDates.splice(index, 1);
-            }
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 3, , 4]);
+                id_6 = req.params.id;
+                date_1 = req.body.date;
+                userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+                (0, validation_1.validateHabitId)(id_6);
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                habits = _b.sent();
+                habit = habits.find(function (h) { return h.id === id_6; });
+                if (!habit)
+                    return [2 /*return*/, res.status(404).json({ status: 'error', message: 'Habit not found' })];
+                completedDates = getExistingValue('completedDates', habit);
+                if (date_1) {
+                    index = completedDates.findIndex(function (completion) {
+                        // Try exact match first (for timestamp), then date match
+                        return completion === date_1 || completion.slice(0, 10) === date_1.slice(0, 10);
+                    });
+                    if (index !== -1) {
+                        completedDates.splice(index, 1);
+                    }
+                }
+                else {
+                    today_1 = new Date().toISOString().slice(0, 10);
+                    todayCompletions = completedDates
+                        .map(function (completion, index) { return ({ completion: completion, index: index }); })
+                        .filter(function (_a) {
+                        var completion = _a.completion;
+                        return completion.slice(0, 10) === today_1;
+                    })
+                        .sort(function (a, b) {
+                        return new Date(b.completion).getTime() - new Date(a.completion).getTime();
+                    });
+                    if (todayCompletions.length > 0) {
+                        completedDates.splice(todayCompletions[0].index, 1);
+                    }
+                }
+                existingTags = getExistingValue('tags', habit);
+                existingNotes = getExistingValue('notes', habit);
+                existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
+                completionsString = completedDates.join(',');
+                tagsString = existingTags.join(',');
+                notesString = JSON.stringify(existingNotes);
+                return [4 /*yield*/, dataClient.updateHabit(id_6, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId)];
+            case 2:
+                _b.sent();
+                res.json({
+                    status: 'success',
+                    data: {
+                        id: id_6,
+                        completedDates: completedDates,
+                        message: 'Completion removed successfully'
+                    }
+                });
+                return [3 /*break*/, 4];
+            case 3:
+                error_10 = _b.sent();
+                handleError(error_10, res);
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
         }
-        else {
-            // Remove the most recent completion for today
-            const today = new Date().toISOString().slice(0, 10);
-            const todayCompletions = completedDates
-                .map((completion, index) => ({ completion, index }))
-                .filter(({ completion }) => completion.slice(0, 10) === today)
-                .sort((a, b) => new Date(b.completion).getTime() - new Date(a.completion).getTime());
-            if (todayCompletions.length > 0) {
-                completedDates.splice(todayCompletions[0].index, 1);
-            }
-        }
-        // Preserve existing data
-        const existingTags = getExistingValue('tags', habit);
-        const existingNotes = getExistingValue('notes', habit);
-        const existingFrequency = habit.ExpectedFrequency || habit.expectedFrequency || '';
-        // Convert to strings for SharePoint
-        const completionsString = completedDates.join(',');
-        const tagsString = existingTags.join(',');
-        const notesString = JSON.stringify(existingNotes);
-        yield dataClient.updateHabit(id, getHabitName(habit), completionsString, tagsString, notesString, existingFrequency, userId);
-        res.json({
-            status: 'success',
-            data: {
-                id,
-                completedDates,
-                message: 'Completion removed successfully'
-            }
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    });
+}); };
 exports.removeHabitCompletion = removeHabitCompletion;
-const getHabitCompletionsForDate = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+var getHabitCompletionsForDate = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id_7, date, userId, targetDate, habits, habit, completedDates, dateOnly_1, count, error_11;
     var _a;
-    try {
-        const { id } = req.params;
-        const { date } = req.query;
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-        (0, validation_1.validateHabitId)(id);
-        const targetDate = date || new Date().toISOString().slice(0, 10);
-        const habits = yield dataClient.getHabits(userId);
-        const habit = habits.find((h) => h.id === id);
-        if (!habit)
-            return res.status(404).json({ status: 'error', message: 'Habit not found' });
-        const completedDates = getExistingValue('completedDates', habit);
-        const dateOnly = targetDate.slice(0, 10);
-        const count = completedDates.filter((completion) => completion.slice(0, 10) === dateOnly).length;
-        res.json({
-            status: 'success',
-            data: {
-                id,
-                date: dateOnly,
-                count,
-                completions: completedDates.filter((completion) => completion.slice(0, 10) === dateOnly)
-            }
-        });
-    }
-    catch (error) {
-        handleError(error, res);
-    }
-});
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                id_7 = req.params.id;
+                date = req.query.date;
+                userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+                (0, validation_1.validateHabitId)(id_7);
+                targetDate = date || new Date().toISOString().slice(0, 10);
+                return [4 /*yield*/, dataClient.getHabits(userId)];
+            case 1:
+                habits = _b.sent();
+                habit = habits.find(function (h) { return h.id === id_7; });
+                if (!habit)
+                    return [2 /*return*/, res.status(404).json({ status: 'error', message: 'Habit not found' })];
+                completedDates = getExistingValue('completedDates', habit);
+                dateOnly_1 = targetDate.slice(0, 10);
+                count = completedDates.filter(function (completion) {
+                    return completion.slice(0, 10) === dateOnly_1;
+                }).length;
+                res.json({
+                    status: 'success',
+                    data: {
+                        id: id_7,
+                        date: dateOnly_1,
+                        count: count,
+                        completions: completedDates.filter(function (completion) {
+                            return completion.slice(0, 10) === dateOnly_1;
+                        })
+                    }
+                });
+                return [3 /*break*/, 3];
+            case 2:
+                error_11 = _b.sent();
+                handleError(error_11, res);
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
 exports.getHabitCompletionsForDate = getHabitCompletionsForDate;

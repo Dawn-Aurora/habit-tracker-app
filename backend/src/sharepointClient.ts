@@ -10,27 +10,39 @@ const siteId = process.env.SHAREPOINT_SITE_ID || "";
 const listId = process.env.SHAREPOINT_LIST_ID || "";
 const usersListId = process.env.SHAREPOINT_USERS_LIST_ID || "";
 
-const credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+let credential: ClientSecretCredential | null = null;
+let graphClient: Client | null = null;
 
-const graphClient = Client.initWithMiddleware({
-  authProvider: {
-    getAccessToken: async () => {
-      const token = await credential.getToken("https://graph.microsoft.com/.default");
-      return token?.token || "";
+function initializeClient() {
+  if (!credential) {
+    if (!tenantId || !clientId || !clientSecret) {
+      throw new Error('SharePoint credentials not configured. Required: SHAREPOINT_TENANT_ID, SHAREPOINT_CLIENT_ID, SHAREPOINT_CLIENT_SECRET');
     }
+    
+    credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+    
+    graphClient = Client.initWithMiddleware({
+      authProvider: {
+        getAccessToken: async () => {
+          const token = await credential!.getToken("https://graph.microsoft.com/.default");
+          return token?.token || "";
+        }
+      }
+    });
   }
-});
+  return graphClient!;
+}
 
 export async function getHabits(userId?: string) {
   try {
+    const client = initializeClient();
     let apiUrl = `/sites/${siteId}/lists/${listId}/items?expand=fields`;
     
-    // Filter by user if userId is provided
     if (userId) {
       apiUrl += `&$filter=fields/UserId eq '${userId}'`;
     }
     
-    const result = await graphClient
+    const result = await client
       .api(apiUrl)
       .get();
     return result.value.map((item: any) => ({
@@ -44,6 +56,7 @@ export async function getHabits(userId?: string) {
 }
 
 export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+  const client = initializeClient();
   const item = {
     fields: {
       Title: name || "",
@@ -55,7 +68,7 @@ export async function createHabit(name: string, completedDate?: string, complete
       UserId: userId || ""
     }
   };
-  const result = await graphClient
+  const result = await client
     .api(`/sites/${siteId}/lists/${listId}/items`)
     .post(item);
   return result;
@@ -63,10 +76,11 @@ export async function createHabit(name: string, completedDate?: string, complete
 
 export async function updateHabit(itemId: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
   try {
+    const client = initializeClient();
     if (!itemId) {
       throw new Error('Item ID is required for updating a habit');
     }
-    const existingItem = await graphClient
+    const existingItem = await client
       .api(`/sites/${siteId}/lists/${listId}/items/${itemId}?expand=fields`)
       .get();
     const fields: any = {};
@@ -77,7 +91,7 @@ export async function updateHabit(itemId: string, name?: string, completedDatesS
     fields.Tags = tagsStr !== undefined ? tagsStr : (existingItem.fields.Tags || "");
     fields.Notes = notesStr !== undefined ? notesStr : (existingItem.fields.Notes || "[]");
     const item = { fields };
-    const result = await graphClient
+    const result = await client
       .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
       .patch(item);
     return result;
@@ -89,7 +103,8 @@ export async function updateHabit(itemId: string, name?: string, completedDatesS
 
 export async function deleteHabit(itemId: string) {
   try {
-    await graphClient
+    const client = initializeClient();
+    await client
       .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
       .delete();
     return { success: true };
@@ -103,9 +118,9 @@ export async function deleteHabit(itemId: string) {
   }
 }
 
-// User Management Functions for SharePoint
 export async function createUser(email: string, firstName: string, lastName: string, hashedPassword: string) {
   try {
+    const client = initializeClient();
     const item = {
       fields: {
         Title: email,
@@ -117,7 +132,7 @@ export async function createUser(email: string, firstName: string, lastName: str
       }
     };
     
-    const result = await graphClient
+    const result = await client
       .api(`/sites/${siteId}/lists/${usersListId}/items`)
       .post(item);
     
@@ -135,7 +150,8 @@ export async function createUser(email: string, firstName: string, lastName: str
 
 export async function getUserByEmail(email: string) {
   try {
-    const result = await graphClient
+    const client = initializeClient();
+    const result = await client
       .api(`/sites/${siteId}/lists/${usersListId}/items?expand=fields&$filter=fields/Email eq '${email}'`)
       .get();
     
@@ -159,7 +175,8 @@ export async function getUserByEmail(email: string) {
 
 export async function getUserById(userId: string) {
   try {
-    const result = await graphClient
+    const client = initializeClient();
+    const result = await client
       .api(`/sites/${siteId}/lists/${usersListId}/items/${userId}?expand=fields`)
       .get();
     

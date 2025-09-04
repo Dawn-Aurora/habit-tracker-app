@@ -1,18 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-class HabitList {
-    constructor() {
+var HabitList = /** @class */ (function () {
+    function HabitList() {
         this.habits = [];
     }
-    addHabit(habit) {
+    HabitList.prototype.addHabit = function (habit) {
         this.habits.push(habit);
         this.render();
-    }
-    removeHabit(habitId) {
-        this.habits = this.habits.filter(habit => habit.id !== habitId);
+    };
+    HabitList.prototype.removeHabit = function (habitId) {
+        this.habits = this.habits.filter(function (habit) { return habit.id !== habitId; });
         this.render();
-    }
-    render() {
-    }
-}
+    };
+    HabitList.prototype.render = function () {
+    };
+    return HabitList;
+}());
 exports.default = HabitList;
