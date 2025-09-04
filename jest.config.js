@@ -11,7 +11,9 @@ module.exports = {
     '!**/node_modules/**'
   ],
   coverageReporters: ['text', 'lcov', 'html'],
-  testPathIgnorePatterns: ['/node_modules/'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   detectOpenHandles: true,
-  forceExit: true
+  forceExit: true,
+  passWithNoTests: true,
+  verbose: true
 };

@@ -37,12 +37,13 @@ const limiter = (0, express_rate_limit_1.default)({
     message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
-// CORS configuration for multiple deployment scenarios
+// CORS configuration for Azure deployment
 const corsOptions = {
     origin: process.env.NODE_ENV === 'production'
         ? [
-            process.env.FRONTEND_URL || 'https://habit-tracker-frontend.vercel.app',
-            'https://habit-tracker-frontend.vercel.app',
+            process.env.FRONTEND_URL || 'https://witty-sand-040223500.2.azurestaticapps.net',
+            'https://witty-sand-040223500.2.azurestaticapps.net',
+            'https://habit-tracker-frontend.azurestaticapps.net',
             'https://your-custom-domain.com'
         ]
         : [
