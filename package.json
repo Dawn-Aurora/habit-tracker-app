@@ -19,7 +19,7 @@
     "deploy:azure": "npm run build && npm run start:prod",
     "build:azure": "npm run build:backend && npm run build:frontend && npm run copy:frontend",
     "copy:frontend": "cp -r habit-tracker-frontend/build/* dist/public/ || xcopy habit-tracker-frontend\\build\\* dist\\public\\ /e /i /y",
-    "postinstall": "npm run build:backend"
+    "postinstall": "echo 'Skipping postinstall - using pre-built files'"
   },
   "dependencies": {
     "@azure/identity": "^4.10.1",
