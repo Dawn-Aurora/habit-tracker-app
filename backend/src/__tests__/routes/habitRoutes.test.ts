@@ -14,7 +14,12 @@ const generateTestToken = (userId: string = 'test-user-1'): string => {
   const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
   
   const token = jwt.sign(
-    { userId, email: 'test@example.com' },
+    { 
+      id: userId,        // Fix: use 'id' not 'userId' to match middleware expectation
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User'
+    },
     JWT_SECRET,
     { expiresIn: '1h' }
   );

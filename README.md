@@ -157,6 +157,9 @@ SHAREPOINT_CLIENT_ID=your-client-id
 SHAREPOINT_CLIENT_SECRET=your-client-secret
 SHAREPOINT_SITE_ID=your-site-id
 SHAREPOINT_LIST_ID=your-list-id
+SHAREPOINT_USERS_LIST_ID=your-users-list-id
+JWT_SECRET=strong-random-secret
+JWT_EXPIRES_IN=7d
 ```
 
 - If `DATA_CLIENT=mock`, the app uses in-memory mock data.
@@ -165,12 +168,30 @@ SHAREPOINT_LIST_ID=your-list-id
 > **Never commit your `.env` file or any credentials to your repository.**
 > All environment variables should be set in your deployment platform or local `.env` file (which is gitignored).
 
+### Users List Provisioning (Migration Note)
+Create a separate SharePoint list named `Users` (or similar). Capture its list ID and set `SHAREPOINT_USERS_LIST_ID`.
+
+Recommended columns (internal names shown):
+- Title (default) – store email if `Email` column absent
+- Email (Single line of text) – optional, improves filtering
+- FirstName (Single line of text) – optional
+- LastName (Single line of text) – optional
+- HashedPassword (Multiple lines of text or Single line) – optional
+- CreatedDate (Date/Time) – optional (system Created is already available)
+
+The backend auto-detects which columns exist and gracefully falls back to only using `Title` if the others are missing.
+
 ## API Endpoints
-- `GET    /habits`         - List all habits
-- `POST   /habits`         - Create a new habit
-- `GET    /habits/:id`     - Get a habit by ID
-- `PUT    /habits/:id`     - Update a habit
-- `DELETE /habits/:id`     - Delete a habit
+- `POST   /api/auth/register`  - Register user
+- `POST   /api/auth/login`     - Login user
+- `GET    /api/auth/self`      - Validate token & return decoded payload
+- `GET    /api/auth/profile`   - (In-memory profile retrieval; enhanced persistence WIP)
+- `PUT    /api/auth/profile`   - Update profile (mock mode currently)
+- `GET    /habits`             - List all habits
+- `POST   /habits`             - Create a new habit
+- `GET    /habits/:id`         - Get a habit by ID
+- `PUT    /habits/:id`         - Update a habit
+- `DELETE /habits/:id`         - Delete a habit
 
 ## Setup Instructions
 1. Clone the repository:

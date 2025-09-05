@@ -11,16 +11,28 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-// Rate limiting for authentication endpoints
+// Generic auth limiter (register)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 20, // allow more generous for register/profile
+  message: {
+    error: 'Too many requests',
+    message: 'Please try again later'
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Stricter login-specific limiter
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: {
     error: 'Too many authentication attempts',
     message: 'Please try again later'
   },
   standardHeaders: true,
-  legacyHeaders: false,
+  legacyHeaders: false
 });
 
 /**
@@ -139,7 +151,7 @@ router.post('/register', authLimiter, registerUser);
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', authLimiter, loginUser);
+router.post('/login', loginLimiter, loginUser);
 
 /**
  * @swagger
@@ -202,6 +214,15 @@ router.get('/profile', authenticateToken, getUserProfile);
  *         description: Unauthorized
  */
 router.put('/profile', authenticateToken, updateUserProfile);
+
+// Lightweight self endpoint for token validation / quick health of auth
+router.get('/self', authenticateToken, (req, res) => {
+  const user = (req as any).user;
+  res.json({
+    user,
+    status: 'ok'
+  });
+});
 
 /**
  * @swagger

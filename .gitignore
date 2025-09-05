@@ -109,3 +109,5 @@ docs/
 .wakatime-project
 */.wakatime-project
 .wakatime-project
+
+test-api.ps1

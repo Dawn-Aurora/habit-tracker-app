@@ -4,6 +4,8 @@ export class ValidationError extends Error {
     constructor(message: string) {
         super(message);
         this.name = 'ValidationError';
+        // Ensures proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, ValidationError.prototype);
     }
 }
 
@@ -11,6 +13,8 @@ export class NotFoundError extends Error {
     constructor(message: string) {
         super(message);
         this.name = 'NotFoundError';
+        // Ensures proper prototype chain for instanceof checks
+        Object.setPrototypeOf(this, NotFoundError.prototype);
     }
 }
 
@@ -30,7 +34,8 @@ export function validateHabitId(id: string): void {
     if (!id || typeof id !== 'string') {
         throw new ValidationError('Habit ID is required and must be a string');
     }
-    if (!/^[a-zA-Z0-9-]+$/.test(id)) {
+    // Allow UUIDs (with dashes) and alphanumeric IDs - more permissive for real-world IDs
+    if (!/^[a-zA-Z0-9-_]+$/.test(id)) {
         throw new ValidationError('Invalid habit ID format');
     }
 }

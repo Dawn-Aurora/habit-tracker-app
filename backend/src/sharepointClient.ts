@@ -12,6 +12,18 @@ const usersListId = process.env.SHAREPOINT_USERS_LIST_ID || "";
 
 let credential: ClientSecretCredential | null = null;
 let graphClient: Client | null = null;
+let userColumnsCache: Set<string> | null = null;
+let habitsColumnsCache: Set<string> | null = null;
+
+// Guard / validation helpers
+function ensureUsersListConfigured() {
+  if (!usersListId) {
+    throw new Error("Users list not configured: set SHAREPOINT_USERS_LIST_ID to the separate Users list ID.");
+  }
+  if (usersListId === listId) {
+    throw new Error("Users list ID matches habits list ID. Create a separate 'Users' list and set SHAREPOINT_USERS_LIST_ID to its ID.");
+  }
+}
 
 function initializeClient() {
   if (!credential) {
@@ -33,22 +45,74 @@ function initializeClient() {
   return graphClient!;
 }
 
+async function ensureUserColumnsLoaded() {
+  ensureUsersListConfigured();
+  if (userColumnsCache) return;
+  const client = initializeClient();
+  try {
+    const cols = await client
+      .api(`/sites/${siteId}/lists/${usersListId}/columns`)
+      .get();
+    userColumnsCache = new Set(cols.value.map((c: any) => c.name));
+  } catch (e) {
+    console.warn("Warning: unable to load Users list columns – proceeding with minimal fields.", e);
+    userColumnsCache = new Set(["Title"]);
+  }
+}
+
+async function ensureHabitsColumnsLoaded() {
+  if (habitsColumnsCache) return;
+  const client = initializeClient();
+  try {
+    const cols = await client
+      .api(`/sites/${siteId}/lists/${listId}/columns`)
+      .get();
+    habitsColumnsCache = new Set(cols.value.map((c: any) => c.name));
+  } catch (e) {
+    console.warn("Warning: unable to load Habits list columns – proceeding with minimal fields.", e);
+    habitsColumnsCache = new Set(["Title"]);
+  }
+}
+
+function userFieldExists(name: string) {
+  if (!userColumnsCache) return false;
+  return userColumnsCache.has(name);
+}
+
+function habitsFieldExists(name: string) {
+  if (!habitsColumnsCache) return false;
+  return habitsColumnsCache.has(name);
+}
+
 export async function getHabits(userId?: string) {
   try {
+    await ensureHabitsColumnsLoaded();
     const client = initializeClient();
     let apiUrl = `/sites/${siteId}/lists/${listId}/items?expand=fields`;
     
-    if (userId) {
+    // Only add UserId filter if the field exists and userId is provided
+    if (userId && habitsFieldExists('UserId')) {
       apiUrl += `&$filter=fields/UserId eq '${userId}'`;
+    } else if (userId && !habitsFieldExists('UserId')) {
+      console.log("⚠️ UserId field not found in habits list - returning all habits");
     }
     
     const result = await client
       .api(apiUrl)
+      .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
       .get();
-    return result.value.map((item: any) => ({
+      
+    const habits = result.value.map((item: any) => ({
       ...item.fields,
       id: item.id
     }));
+    
+    // Client-side filtering if UserId field doesn't exist but userId was requested
+    if (userId && !habitsFieldExists('UserId')) {
+      return habits.filter((habit: any) => habit.UserId === userId || habit.userId === userId);
+    }
+    
+    return habits;
   } catch (error: any) {
     console.error('Error fetching habits:', error);
     throw new Error(`Failed to fetch habits: ${error.message}`);
@@ -56,26 +120,34 @@ export async function getHabits(userId?: string) {
 }
 
 export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+  await ensureHabitsColumnsLoaded();
   const client = initializeClient();
-  const item = {
-    fields: {
-      Title: name || "",
-      Name: name || "",
-      CompletedDates: completedDate || "",
-      ExpectedFrequency: expectedFrequency || "",
-      Tags: tagsStr && tagsStr.length ? tagsStr : "",
-      Notes: notesStr && notesStr.length ? notesStr : "[]",
-      UserId: userId || ""
-    }
-  };
+  
+  // Build fields object with only available columns
+  const fields: Record<string, string> = {};
+  
+  // Title is mandatory in SharePoint
+  fields.Title = name || "";
+  
+  // Add other fields only if they exist in the list
+  if (habitsFieldExists('Name')) fields.Name = name || "";
+  if (habitsFieldExists('CompletedDates')) fields.CompletedDates = completedDate || completedDatesStr || "";
+  if (habitsFieldExists('ExpectedFrequency')) fields.ExpectedFrequency = expectedFrequency || "";
+  if (habitsFieldExists('Tags')) fields.Tags = tagsStr && tagsStr.length ? tagsStr : "";
+  if (habitsFieldExists('Notes')) fields.Notes = notesStr && notesStr.length ? notesStr : "[]";
+  if (habitsFieldExists('UserId') && userId) fields.UserId = userId;
+  
+  const item = { fields };
   const result = await client
     .api(`/sites/${siteId}/lists/${listId}/items`)
+    .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
     .post(item);
   return result;
 }
 
 export async function updateHabit(itemId: string, name?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string) {
   try {
+    await ensureHabitsColumnsLoaded();
     const client = initializeClient();
     if (!itemId) {
       throw new Error('Item ID is required for updating a habit');
@@ -83,16 +155,34 @@ export async function updateHabit(itemId: string, name?: string, completedDatesS
     const existingItem = await client
       .api(`/sites/${siteId}/lists/${listId}/items/${itemId}?expand=fields`)
       .get();
-    const fields: any = {};
+    
+    // Build fields object with only available columns
+    const fields: Record<string, string> = {};
+    
+    // Title is mandatory in SharePoint
     fields.Title = name !== undefined ? name : (existingItem.fields.Title || "");
-    fields.Name = name !== undefined ? name : (existingItem.fields.Name || "");
-    fields.CompletedDates = completedDatesStr !== undefined ? completedDatesStr : (existingItem.fields.CompletedDates || "");
-    fields.ExpectedFrequency = expectedFrequency !== undefined ? expectedFrequency : (existingItem.fields.ExpectedFrequency || "");
-    fields.Tags = tagsStr !== undefined ? tagsStr : (existingItem.fields.Tags || "");
-    fields.Notes = notesStr !== undefined ? notesStr : (existingItem.fields.Notes || "[]");
+    
+    // Add other fields only if they exist in the list
+    if (habitsFieldExists('Name')) {
+      fields.Name = name !== undefined ? name : (existingItem.fields.Name || "");
+    }
+    if (habitsFieldExists('CompletedDates')) {
+      fields.CompletedDates = completedDatesStr !== undefined ? completedDatesStr : (existingItem.fields.CompletedDates || "");
+    }
+    if (habitsFieldExists('ExpectedFrequency')) {
+      fields.ExpectedFrequency = expectedFrequency !== undefined ? expectedFrequency : (existingItem.fields.ExpectedFrequency || "");
+    }
+    if (habitsFieldExists('Tags')) {
+      fields.Tags = tagsStr !== undefined ? tagsStr : (existingItem.fields.Tags || "");
+    }
+    if (habitsFieldExists('Notes')) {
+      fields.Notes = notesStr !== undefined ? notesStr : (existingItem.fields.Notes || "[]");
+    }
+    
     const item = { fields };
     const result = await client
       .api(`/sites/${siteId}/lists/${listId}/items/${itemId}`)
+      .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
       .patch(item);
     return result;
   } catch (error: any) {
@@ -120,17 +210,16 @@ export async function deleteHabit(itemId: string) {
 
 export async function createUser(email: string, firstName: string, lastName: string, hashedPassword: string) {
   try {
+  ensureUsersListConfigured();
+  await ensureUserColumnsLoaded();
     const client = initializeClient();
-    const item = {
-      fields: {
-        Title: email,
-        Email: email,
-        FirstName: firstName,
-        LastName: lastName,
-        HashedPassword: hashedPassword,
-        CreatedDate: new Date().toISOString()
-      }
-    };
+  const fields: Record<string, string> = { Title: email };
+  if (userFieldExists('Email')) fields.Email = email;
+  if (userFieldExists('FirstName')) fields.FirstName = firstName;
+  if (userFieldExists('LastName')) fields.LastName = lastName;
+  if (userFieldExists('HashedPassword')) fields.HashedPassword = hashedPassword;
+  if (userFieldExists('CreatedDate')) fields.CreatedDate = new Date().toISOString();
+  const item = { fields };
     
     const result = await client
       .api(`/sites/${siteId}/lists/${usersListId}/items`)
@@ -150,22 +239,40 @@ export async function createUser(email: string, firstName: string, lastName: str
 
 export async function getUserByEmail(email: string) {
   try {
+    ensureUsersListConfigured();
+    await ensureUserColumnsLoaded();
     const client = initializeClient();
-    const result = await client
-      .api(`/sites/${siteId}/lists/${usersListId}/items?expand=fields&$filter=fields/Email eq '${email}'`)
-      .get();
-    
+    let result;
+    if (userFieldExists('Email')) {
+      try {
+        result = await client
+          .api(`/sites/${siteId}/lists/${usersListId}/items?expand=fields&$filter=fields/Email eq '${email}'`)
+          .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+          .get();
+      } catch (emailFilterError) {
+        console.warn('Email field filter failed, falling back to Title search:', emailFilterError);
+        result = await client
+          .api(`/sites/${siteId}/lists/${usersListId}/items?expand=fields&$top=50`)
+          .get();
+        result.value = result.value.filter((v: any) => (v.fields.Title || '').toLowerCase() === email.toLowerCase());
+      }
+    } else {
+      result = await client
+        .api(`/sites/${siteId}/lists/${usersListId}/items?expand=fields&$top=50`)
+        .get();
+      result.value = result.value.filter((v: any) => (v.fields.Title || '').toLowerCase() === email.toLowerCase());
+    }
+
     if (result.value && result.value.length > 0) {
       const user = result.value[0];
       return {
         id: user.id,
-        email: user.fields.Email,
-        firstName: user.fields.FirstName,
-        lastName: user.fields.LastName,
-        hashedPassword: user.fields.HashedPassword
+        email: user.fields.Email || user.fields.Title,
+        firstName: user.fields.FirstName || '',
+        lastName: user.fields.LastName || '',
+        hashedPassword: user.fields.HashedPassword || ''
       };
     }
-    
     return null;
   } catch (error: any) {
     console.error('Error getting user by email:', error);
@@ -175,6 +282,8 @@ export async function getUserByEmail(email: string) {
 
 export async function getUserById(userId: string) {
   try {
+    ensureUsersListConfigured();
+    await ensureUserColumnsLoaded();
     const client = initializeClient();
     const result = await client
       .api(`/sites/${siteId}/lists/${usersListId}/items/${userId}?expand=fields`)
@@ -182,9 +291,9 @@ export async function getUserById(userId: string) {
     
     return {
       id: result.id,
-      email: result.fields.Email,
-      firstName: result.fields.FirstName,
-      lastName: result.fields.LastName
+      email: result.fields.Email || result.fields.Title,
+      firstName: result.fields.FirstName || '',
+      lastName: result.fields.LastName || ''
     };
   } catch (error: any) {
     console.error('Error getting user by ID:', error);

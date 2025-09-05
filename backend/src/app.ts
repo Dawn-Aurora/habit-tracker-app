@@ -1,8 +1,13 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Production configuration - remove mock data flag
-// process.env.USE_MOCK_DATA = 'true';
+if (!process.env.USE_MOCK_DATA) {
+  if (process.env.DATA_CLIENT && process.env.DATA_CLIENT.toLowerCase() === 'mock') {
+    process.env.USE_MOCK_DATA = 'true';
+  } else if (process.env.DATA_CLIENT && process.env.DATA_CLIENT.toLowerCase() === 'sharepoint') {
+    process.env.USE_MOCK_DATA = 'false';
+  }
+}
 
 import express from 'express';
 import cors from 'cors';
@@ -11,13 +16,17 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import habitRouter from './routes/habitRoutes';
 import authRouter from './routes/authRoutes';
-// Temporarily disabled Swagger due to deployment error
-// import { specs, swaggerUi } from './swagger';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security middleware
+if (process.env.NODE_ENV === 'production') {
+  const jwtSecret = process.env.JWT_SECRET || '';
+  if (!jwtSecret || jwtSecret.includes('your-super-secret-jwt-key')) {
+    console.warn('[SECURITY] Weak or default JWT_SECRET detected in production. Set a strong, random secret in environment variables.');
+  }
+}
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {

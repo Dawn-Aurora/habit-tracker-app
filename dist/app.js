@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 // Production configuration - remove mock data flag
-// process.env.USE_MOCK_DATA = 'true';
+process.env.USE_MOCK_DATA = 'true';
 var express_1 = __importDefault(require("express"));
 var cors_1 = __importDefault(require("cors"));
 var helmet_1 = __importDefault(require("helmet"));

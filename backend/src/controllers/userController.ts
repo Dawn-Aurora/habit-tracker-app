@@ -40,6 +40,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
     // Validation
     if (!email || !password || !firstName || !lastName) {
+      console.log('❌ Registration failed: Missing required fields');
       return res.status(400).json({
         error: 'Missing required fields',
         message: 'Email, password, firstName, and lastName are required'
@@ -69,14 +70,17 @@ export const registerUser = async (req: Request, res: Response) => {
       try {
         existingUser = await sharepointClient.getUserByEmail(email.toLowerCase());
       } catch (error) {
+        console.log('⚠️ SharePoint user check failed, falling back to in-memory:', (error as Error).message);
         // If SharePoint fails, check in-memory storage
         existingUser = users.find(user => user.email.toLowerCase() === email.toLowerCase());
       }
     } else {
       existingUser = users.find(user => user.email.toLowerCase() === email.toLowerCase());
+      console.log('💾 In-memory user check result:', existingUser ? 'User found' : 'No user found');
     }
 
     if (existingUser) {
+      console.log('❌ Registration failed: User already exists for email:', email);
       return res.status(409).json({
         error: 'User already exists',
         message: 'A user with this email already exists'
@@ -153,10 +157,12 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
+    console.log('🔐 Login attempt for:', req.body.email);
     const { email, password }: UserLoginInput = req.body;
 
     // Validation
     if (!email || !password) {
+      console.log('❌ Login failed: Missing credentials');
       return res.status(400).json({
         error: 'Missing credentials',
         message: 'Email and password are required'
@@ -180,14 +186,18 @@ export const loginUser = async (req: Request, res: Response) => {
           };
         }
       } catch (error) {
+        console.log('⚠️ SharePoint login lookup failed, falling back to in-memory:', (error as Error).message);
         // Fallback to in-memory storage
         user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        console.log('💾 In-memory fallback result:', user ? 'User found' : 'No user found');
       }
     } else {
       user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      console.log('💾 In-memory user lookup result:', user ? 'User found' : 'No user found');
     }
 
     if (!user) {
+      console.log('❌ Login failed: User not found for email:', email);
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Email or password is incorrect'
@@ -195,13 +205,19 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log('🔑 Verifying password...');
+    const userWithHashedPassword = user as any;
+    const passwordToCheck = userWithHashedPassword.hashedPassword || user.password;
+    const isPasswordValid = await bcrypt.compare(password, passwordToCheck);
     if (!isPasswordValid) {
+      console.log('❌ Login failed: Invalid password for email:', email);
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Email or password is incorrect'
       });
     }
+
+    console.log('✅ Password verification successful for email:', email);
 
     // Update last login (for in-memory users)
     if (!useSharePoint) {
