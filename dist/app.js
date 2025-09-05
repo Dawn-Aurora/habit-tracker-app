@@ -5,8 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-// Production configuration - remove mock data flag
-process.env.USE_MOCK_DATA = 'true';
+if (!process.env.USE_MOCK_DATA) {
+    if (process.env.DATA_CLIENT && process.env.DATA_CLIENT.toLowerCase() === 'mock') {
+        process.env.USE_MOCK_DATA = 'true';
+    }
+    else if (process.env.DATA_CLIENT && process.env.DATA_CLIENT.toLowerCase() === 'sharepoint') {
+        process.env.USE_MOCK_DATA = 'false';
+    }
+}
 var express_1 = __importDefault(require("express"));
 var cors_1 = __importDefault(require("cors"));
 var helmet_1 = __importDefault(require("helmet"));
@@ -14,11 +20,14 @@ var express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 var path_1 = __importDefault(require("path"));
 var habitRoutes_1 = __importDefault(require("./routes/habitRoutes"));
 var authRoutes_1 = __importDefault(require("./routes/authRoutes"));
-// Temporarily disabled Swagger due to deployment error
-// import { specs, swaggerUi } from './swagger';
 var app = (0, express_1.default)();
 var PORT = process.env.PORT || 5000;
-// Security middleware
+if (process.env.NODE_ENV === 'production') {
+    var jwtSecret = process.env.JWT_SECRET || '';
+    if (!jwtSecret || jwtSecret.includes('your-super-secret-jwt-key')) {
+        console.warn('[SECURITY] Weak or default JWT_SECRET detected in production. Set a strong, random secret in environment variables.');
+    }
+}
 app.use((0, helmet_1.default)({
     contentSecurityPolicy: {
         directives: {
