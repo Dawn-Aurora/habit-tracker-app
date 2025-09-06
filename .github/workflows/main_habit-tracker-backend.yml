@@ -30,9 +30,12 @@ jobs:
       
       - name: Verify build output
         run: |
-          dir dist
-          if not exist "dist\test-server.js" (echo "ERROR: test-server.js not found!" && exit 1)
-          echo "Build verification complete"
+          Get-ChildItem dist
+          if (-not (Test-Path "dist\test-server.js")) {
+            Write-Error "ERROR: test-server.js not found!"
+            exit 1
+          }
+          Write-Host "Build verification complete"
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
