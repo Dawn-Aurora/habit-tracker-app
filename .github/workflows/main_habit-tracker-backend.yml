@@ -26,7 +26,13 @@ jobs:
       - name: npm install and build
         run: |
           npm install
-          npm run build --if-present
+          npm run build:backend
+      
+      - name: Verify build output
+        run: |
+          dir dist
+          if not exist "dist\test-server.js" (echo "ERROR: test-server.js not found!" && exit 1)
+          echo "Build verification complete"
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
