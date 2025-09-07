@@ -20,11 +20,12 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: npm install and build
+      - name: npm install, build and test
         run: |
           npm install
           npm run build:backend
-          echo "Build completed successfully"
+          npm test
+          echo "Build and test completed successfully"
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
