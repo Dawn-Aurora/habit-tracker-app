@@ -1,4 +1,4 @@
-name: Build and deploy Node.js app to Azure Web App - habit-tracker-backend
+name: Build and deploy Node.js app to Azure Web App - habit-tracker-backend-linux
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read
 
@@ -20,15 +20,11 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: npm install and verify file
+      - name: npm install and build
         run: |
           npm install
-          Get-ChildItem backend/src/pure-test-server.js
-          if (-not (Test-Path "backend/src/pure-test-server.js")) {
-            Write-Error "ERROR: pure-test-server.js not found!"
-            exit 1
-          }
-          Write-Host "Pure CommonJS server verification complete"
+          npm run build:backend
+          echo "Build completed successfully"
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -50,7 +46,7 @@ jobs:
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'habit-tracker-backend'
+          app-name: 'habit-tracker-backend-linux'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E93F5A286BE54190B70017876E2DEFCF }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_LINUX }}
