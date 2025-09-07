@@ -12,7 +12,7 @@
     "dev": "ts-node backend/src/server.ts",
     "dev:react": "cd habit-tracker-frontend && npm start",
     "install:all": "npm install && cd habit-tracker-frontend && npm install",
-    "test": "jest --passWithNoTests",
+    "test:manual": "jest --passWithNoTests",
     "test:coverage": "jest --coverage --passWithNoTests",
     "test:frontend": "cd habit-tracker-frontend && npm test",
     "deploy:render": "npm run build && npm run start:prod",
