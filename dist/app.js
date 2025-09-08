@@ -71,13 +71,9 @@ app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files based on environment
 var isProduction = process.env.NODE_ENV === 'production';
-if (isProduction) {
-    // In production, serve the React build
-    var reactBuildPath = path_1.default.join(__dirname, '../../habit-tracker-frontend/build');
-    app.use(express_1.default.static(reactBuildPath));
-}
-else {
-    // In development, serve the HTML interface
+// For Azure deployment, we only serve API endpoints (frontend is deployed separately)
+if (!isProduction) {
+    // In development only, serve the HTML interface
     app.use(express_1.default.static(path_1.default.join(__dirname, '../../public')));
 }
 // API routes
@@ -109,8 +105,12 @@ app.get('*', function (req, res) {
         return res.status(404).json({ message: 'API endpoint not found' });
     }
     if (isProduction) {
-        // Serve React build in production
-        res.sendFile(path_1.default.join(__dirname, '../../habit-tracker-frontend/build/index.html'));
+        // In production, redirect to frontend URL or return API info
+        res.json({
+            message: 'Habit Tracker API Server',
+            frontend: 'https://witty-sand-040223500.2.azurestaticapps.net',
+            api: '/api'
+        });
     }
     else {
         // Serve HTML interface in development
