@@ -24,6 +24,7 @@ function App() {
   
   const [user, setUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   
   const [habits, setHabits] = useState([]);
   const [editingHabit, setEditingHabit] = useState(null);
@@ -163,7 +164,10 @@ function App() {
 
   const handleRegisterSuccess = (userData, token) => {
     setError('');
+    setRegistrationSuccess(true);
     setShowRegister(false);
+    // Clear success message after 4 seconds
+    setTimeout(() => setRegistrationSuccess(false), 4000);
   };
 
   const handleAddHabit = async (habitData) => {
@@ -432,6 +436,11 @@ function App() {
           </div>
           
           {error && <div className="error-message">{error}</div>}
+          {registrationSuccess && (
+            <div className="success-message">
+              🎉 Registration successful! Please log in to continue.
+            </div>
+          )}
           
           {showRegister ? (
             <RegisterForm
