@@ -2,9 +2,9 @@
   "name": "habit-tracker-app",
   "version": "1.0.0",
   "description": "A simple habit tracker application built with TypeScript and Express.",
-  "main": "dist/app.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node dist/app.js",
+    "start": "node dist/server.js",
     "build": "npm run build:backend",
     "build:backend": "tsc",
     "build:frontend": "cd habit-tracker-frontend && npm install && npm run build",
