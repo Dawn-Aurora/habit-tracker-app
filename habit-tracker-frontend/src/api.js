@@ -2,7 +2,7 @@ import axios from 'axios';
 
 let API_URL = process.env.REACT_APP_API_URL || 
   (process.env.NODE_ENV === 'production' 
-    ? 'https://habit-tracker-backend.azurewebsites.net/api'
+    ? 'https://habit-tracker-backend-linux.azurewebsites.net/api'
     : 'http://localhost:5000/api');
 
 if (!API_URL.endsWith('/api')) {
