@@ -98,9 +98,16 @@ app.get('/api', function (req, res) {
         documentation: 'Swagger docs temporarily disabled for deployment'
     });
 });
-// Serve the appropriate frontend for all non-API routes
+app.get('/api/health', function (req, res) {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development',
+        dataClient: process.env.DATA_CLIENT || 'unknown'
+    });
+});
 app.get('*', function (req, res) {
-    // Don't serve HTML for API routes
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({ message: 'API endpoint not found' });
     }
@@ -116,14 +123,5 @@ app.get('*', function (req, res) {
         // Serve HTML interface in development
         res.sendFile(path_1.default.join(__dirname, '../../public/index.html'));
     }
-});
-// Health check endpoint
-app.get('/api/health', function (req, res) {
-    res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development'
-    });
 });
 exports.default = app;

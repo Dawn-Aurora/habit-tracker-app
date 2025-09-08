@@ -107,9 +107,17 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Serve the appropriate frontend for all non-API routes
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    dataClient: process.env.DATA_CLIENT || 'unknown'
+  });
+});
+
 app.get('*', (req, res) => {
-  // Don't serve HTML for API routes
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ message: 'API endpoint not found' });
   }
@@ -125,16 +133,6 @@ app.get('*', (req, res) => {
     // Serve HTML interface in development
     res.sendFile(path.join(__dirname, '../../public/index.html'));
   }
-});
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
-  });
 });
 
 export default app;
