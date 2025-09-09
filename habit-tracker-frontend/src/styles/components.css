@@ -1,5 +1,3 @@
-/* Components CSS - HTML-like React styling */
-
 /* Calendar Animations */
 @keyframes pulse {
   0%, 100% {
@@ -62,13 +60,12 @@
 /* Auth Container */
 .auth-container {
   min-height: 100vh;
-  height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  overflow: auto;
+  padding: 40px 20px;
+  overflow-y: auto;
 }
 
 .auth-card {
@@ -79,6 +76,8 @@
   width: 100%;
   max-width: 420px;
   backdrop-filter: blur(10px);
+  margin: auto;
+  flex-shrink: 0;
 }
 
 .auth-header {

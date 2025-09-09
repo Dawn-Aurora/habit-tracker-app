@@ -5,10 +5,23 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
   const [name, setName] = useState('');
   const [count, setCount] = useState(1);
   const [period, setPeriod] = useState('day');
+  const [category, setCategory] = useState('');
   const [tags, setTags] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const categories = [
+    { value: '', label: 'Select a category...' },
+    { value: 'health', label: '🏃‍♂️ Health & Fitness' },
+    { value: 'productivity', label: '💼 Productivity' },
+    { value: 'personal', label: '🌱 Personal Development' },
+    { value: 'creative', label: '🎨 Creative' },
+    { value: 'social', label: '👥 Social' },
+    { value: 'learning', label: '📚 Learning' },
+    { value: 'mindfulness', label: '🧘‍♀️ Mindfulness' },
+    { value: 'other', label: '📌 Other' }
+  ];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -23,6 +36,11 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
     
     setLoading(true);
     const tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
+    
+    // Add category to tags if it's selected
+    if (category && !tagsArray.includes(category)) {
+      tagsArray.unshift(category);
+    }
     
     const habitData = { 
       name: name.trim(), 
@@ -44,6 +62,7 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
           setName('');
           setCount(1);
           setPeriod('day');
+          setCategory('');
           setTags('');
           setStartDate(new Date().toISOString().slice(0, 10));
           setError('');
@@ -63,6 +82,7 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
           setName('');
           setCount(1);
           setPeriod('day');
+          setCategory('');
           setTags('');
           setStartDate(new Date().toISOString().slice(0, 10));
           setError('');
@@ -180,14 +200,40 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
       </fieldset>
       
       <div className="modern-form-group">
+        <label htmlFor="category" className="modern-label">
+          📂 Category
+        </label>
+        <select
+          id="category"
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          className="modern-input"
+          aria-describedby="category-help"
+        >
+          {categories.map(cat => (
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
+            </option>
+          ))}
+        </select>
+        <div id="category-help" style={{ 
+          fontSize: '0.75rem', 
+          color: 'var(--gray-500)', 
+          marginTop: 'var(--space-1)' 
+        }}>
+          💡 Choose a category to help organize your habits
+        </div>
+      </div>
+      
+      <div className="modern-form-group">
         <label htmlFor="tags" className="modern-label">
-          🏷️ Tags (comma-separated)
+          🏷️ Additional Tags (comma-separated)
         </label>
         <input
           id="tags"
           value={tags}
           onChange={e => setTags(e.target.value)}
-          placeholder="e.g., health, fitness, personal"
+          placeholder="e.g., morning routine, evening, outdoor"
           className="modern-input"
           aria-describedby="tags-help"
         />
@@ -196,7 +242,7 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
           color: 'var(--gray-500)', 
           marginTop: 'var(--space-1)' 
         }}>
-          💡 Separate multiple tags with commas
+          💡 Add extra tags to further categorize your habit
         </div>
       </div>
       

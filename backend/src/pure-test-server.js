@@ -62,7 +62,7 @@ server.listen(PORT, '0.0.0.0', function () {
 });
 
 process.on('SIGTERM', function () {
-    console.log('SIGTERM received, shutting down gracefully');
+    console.log('SIGTERM received, shutting down    gracefully');
     server.close(function () {
         console.log('Process terminated');
         process.exit(0);
