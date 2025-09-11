@@ -193,11 +193,11 @@ function App() {
       
       setShowAddForm(false);
       
-      // Optional: Reload habits from server to ensure consistency
-      // But use a small delay to prevent race condition
+      // Reload habits from server to ensure consistency
+      // Small delay to prevent race condition and allow UI to update
       setTimeout(() => {
         loadHabits();
-      }, 100);
+      }, 200);
       
     } catch (err) {
       console.error('App.js - Error adding habit:', err);

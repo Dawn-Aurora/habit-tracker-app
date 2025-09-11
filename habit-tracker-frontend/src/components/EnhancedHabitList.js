@@ -52,9 +52,9 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
   
   // Helper function to determine if a habit is recently active (within 7 days)
   const isRecentlyActive = (habit) => {
-    // If habit has no completed dates, treat it as active (newly created habit)
+    // If habit has no completed dates, it's inactive (newly created habit)
     if (!habit.completedDates || !Array.isArray(habit.completedDates) || habit.completedDates.length === 0) {
-      return true; // Show newly created habits as "active"
+      return false; // Newly created habits go to inactive section
     }
     
     const sevenDaysAgo = new Date();
@@ -70,6 +70,17 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
   React.useEffect(() => {
     setFilteredHabits(habits || []);
   }, [habits]);
+
+  // Auto-expand inactive section when there are inactive habits (including new ones)
+  React.useEffect(() => {
+    if (habits && habits.length > 0) {
+      const inactiveCount = habits.filter(habit => !isRecentlyActive(habit)).length;
+      // Auto-expand if there are inactive habits and the section is currently collapsed
+      if (inactiveCount > 0 && !showInactiveHabits) {
+        setShowInactiveHabits(true);
+      }
+    }
+  }, [habits]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update pagination based on screen size
   React.useEffect(() => {
