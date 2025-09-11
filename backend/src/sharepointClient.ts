@@ -88,7 +88,7 @@ export async function getHabits(userId?: string) {
   try {
     await ensureHabitsColumnsLoaded();
     const client = initializeClient();
-    let apiUrl = `/sites/${siteId}/lists/${listId}/items?expand=fields`;
+    let apiUrl = `/sites/${siteId}/lists/${listId}/items?expand=fields&$top=100`;
     
     // Only add UserId filter if the field exists and userId is provided
     if (userId && habitsFieldExists('UserId')) {

@@ -21,8 +21,7 @@ const filterHabitsByUser = (habits: any[], userId?: string) => {
 const dataClient = useMock
     ? {
         async getHabits(userId?: string) {
-            const allHabits = await mockDataClient.getHabits();
-            return filterHabitsByUser(allHabits, userId);
+            return await mockDataClient.getHabits(userId);
         },
         async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string, category?: string) {
             return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);

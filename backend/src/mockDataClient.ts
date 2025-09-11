@@ -7,6 +7,7 @@ let habits: any[] = [
 
 export async function getHabits(userId?: string) {
   const filteredHabits = userId ? habits.filter(h => h.userId === userId) : habits;
+  
   return filteredHabits.map(h => ({ 
     ...h, 
     id: h.id,
@@ -47,6 +48,9 @@ export async function createHabit(name: string, completedDate?: string, completi
     }
   };
   habits.push(newHabit);
+  
+  console.log(`[DEBUG] Habit created with ID: ${newHabit.id}, Total habits now: ${habits.length}`);
+  
   return {
     id: newHabit.id,
     name: newHabit.name,
