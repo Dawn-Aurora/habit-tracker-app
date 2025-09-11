@@ -24,7 +24,7 @@ const dataClient = useMock
             const allHabits = await mockDataClient.getHabits();
             return filterHabitsByUser(allHabits, userId);
         },
-        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
+        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string, category?: string) {
             return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
         },
         async updateHabit(id: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
@@ -43,9 +43,9 @@ const dataClient = useMock
                 return filterHabitsByUser(allHabits, userId);
             }
         },
-        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string) {
+        async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string, category?: string) {
             try {
-                return await sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId);
+                return await sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId, category);
             } catch (e) {
                 return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
             }
@@ -183,6 +183,7 @@ export const getHabits = async (req: Request, res: Response) => {
             return {
                 id: habit.id,
                 name: getHabitName(habit),
+                category: habit.Category || habit.category || null,
                 completedDates: habit.CompletedDates ? safeSplit(habit.CompletedDates) : habit.completedDates || [],
                 tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
                 notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
@@ -210,7 +211,7 @@ export const getHabits = async (req: Request, res: Response) => {
 
 export const createHabit = async (req: Request, res: Response) => {
     try {
-        const { name, frequency, expectedFrequency } = req.body;
+        const { name, frequency, expectedFrequency, category, tags } = req.body;
         validateHabitName(name);
         const sanitizedName = sanitizeHabitName(name);
         const userId = (req as AuthenticatedRequest).user?.id; // Get userId from authenticated user
@@ -223,12 +224,20 @@ export const createHabit = async (req: Request, res: Response) => {
             frequencyToStore = JSON.stringify(expectedFrequency);
         }
         
+        // Prepare tags string for SharePoint (include category in tags if provided)
+        let tagsToStore = '';
+        if (tags && Array.isArray(tags)) {
+            tagsToStore = tags.join(',');
+        }
+        
         // Pass frequency to dataClient as expectedFrequency
-        const result = await dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId);
+        const result = await dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId, category);
         
         const newHabit = {
             id: result.id,
             name: getHabitName(result, sanitizedName),
+            category: category || null,
+            tags: tags || [],
             completedDates: (result.fields && result.fields.CompletedDates)
                 ? result.fields.CompletedDates.split(',').filter(Boolean)
                 : result.completedDates || [],

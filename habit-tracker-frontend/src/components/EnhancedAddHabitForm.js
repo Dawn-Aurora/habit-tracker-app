@@ -37,13 +37,9 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
     setLoading(true);
     const tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
     
-    // Add category to tags if it's selected
-    if (category && !tagsArray.includes(category)) {
-      tagsArray.unshift(category);
-    }
-    
     const habitData = { 
       name: name.trim(), 
+      category: category || null,
       tags: tagsArray,
       startDate,
       expectedFrequency: {

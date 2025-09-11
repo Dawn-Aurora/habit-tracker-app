@@ -100,7 +100,7 @@ var dataClient = useMock
                 });
             });
         },
-        createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId) {
+        createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId, category) {
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -152,14 +152,14 @@ var dataClient = useMock
                 });
             });
         },
-        createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId) {
+        createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId, category) {
             return __awaiter(this, void 0, void 0, function () {
                 var e_2;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             _a.trys.push([0, 2, , 4]);
-                            return [4 /*yield*/, sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId)];
+                            return [4 /*yield*/, sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId, category)];
                         case 1: return [2 /*return*/, _a.sent()];
                         case 2:
                             e_2 = _a.sent();
@@ -308,6 +308,7 @@ var getHabits = function (req, res) { return __awaiter(void 0, void 0, void 0, f
                     return {
                         id: habit.id,
                         name: getHabitName(habit),
+                        category: habit.Category || habit.category || null,
                         completedDates: habit.CompletedDates ? safeSplit(habit.CompletedDates) : habit.completedDates || [],
                         tags: habit.Tags ? safeSplit(habit.Tags) : habit.tags || [],
                         notes: habit.Notes ? safeJsonParse(habit.Notes, []) : habit.notes || [],
@@ -338,13 +339,13 @@ var getHabits = function (req, res) { return __awaiter(void 0, void 0, void 0, f
 }); };
 exports.getHabits = getHabits;
 var createHabit = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, name_1, frequency, expectedFrequency, sanitizedName, userId, frequencyToStore, result, newHabit, error_2;
+    var _a, name_1, frequency, expectedFrequency, category, tags, sanitizedName, userId, frequencyToStore, tagsToStore, result, newHabit, error_2;
     var _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
                 _c.trys.push([0, 2, , 3]);
-                _a = req.body, name_1 = _a.name, frequency = _a.frequency, expectedFrequency = _a.expectedFrequency;
+                _a = req.body, name_1 = _a.name, frequency = _a.frequency, expectedFrequency = _a.expectedFrequency, category = _a.category, tags = _a.tags;
                 (0, validation_1.validateHabitName)(name_1);
                 sanitizedName = (0, validation_1.sanitizeHabitName)(name_1);
                 userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
@@ -353,12 +354,18 @@ var createHabit = function (req, res) { return __awaiter(void 0, void 0, void 0,
                 if (typeof expectedFrequency === 'object' && expectedFrequency !== null) {
                     frequencyToStore = JSON.stringify(expectedFrequency);
                 }
-                return [4 /*yield*/, dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId)];
+                tagsToStore = '';
+                if (tags && Array.isArray(tags)) {
+                    tagsToStore = tags.join(',');
+                }
+                return [4 /*yield*/, dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId, category)];
             case 1:
                 result = _c.sent();
                 newHabit = {
                     id: result.id,
                     name: getHabitName(result, sanitizedName),
+                    category: category || null,
+                    tags: tags || [],
                     completedDates: (result.fields && result.fields.CompletedDates)
                         ? result.fields.CompletedDates.split(',').filter(Boolean)
                         : result.completedDates || [],

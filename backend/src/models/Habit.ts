@@ -1,5 +1,5 @@
 export interface FrequencyConfig {
-    count: number;        // e.g., 3
+    count: number;
     period: 'day' | 'week' | 'month' | 'year';
 }
 
@@ -9,17 +9,19 @@ class Habit {
     name: string;
     frequency: number;
     completed: boolean;
+    category?: string;
     tags: string[];
     notes: { date: string; text: string }[];
     expectedFrequency: number | string | FrequencyConfig; // Unified frequency field
-    completions: string[]; // ISO date strings - will support multiple per day
+    completions: string[];
 
-    constructor(id: string, name: string, frequency: number, tags: string[] = [], expectedFrequency?: number | string | FrequencyConfig, userId?: string) {
+    constructor(id: string, name: string, frequency: number, tags: string[] = [], expectedFrequency?: number | string | FrequencyConfig, userId?: string, category?: string) {
         this.id = id;
-        this.userId = userId || ''; // Default to empty string for backward compatibility
+        this.userId = userId || '';
         this.name = name;
         this.frequency = frequency;
         this.completed = false;
+        this.category = category;
         this.tags = tags;
         this.notes = [];
         this.expectedFrequency = expectedFrequency || frequency;

@@ -4,6 +4,7 @@ import '../styles/mobile-navigation.css';
 
 function MobileNavigation({ 
   activeView, 
+  
   onViewChange, 
   completedToday = 0, 
   totalHabits = 0, 

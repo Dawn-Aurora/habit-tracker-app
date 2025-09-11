@@ -8,6 +8,21 @@ import HabitRowContainer from './HabitRowContainer';
 import { useResponsive } from '../hooks/useResponsive';
 
 function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote, onViewMetrics, onCompletionChange }) {
+  // Helper function to get category display label
+  const getCategoryLabel = (category) => {
+    const categoryMap = {
+      'health': 'Health & Fitness',
+      'productivity': 'Productivity',
+      'personal': 'Personal Development',
+      'creative': 'Creative',
+      'social': 'Social',
+      'learning': 'Learning',
+      'mindfulness': 'Mindfulness',
+      'other': 'Other'
+    };
+    return categoryMap[category] || category;
+  };
+
   // Responsive design hook
   const responsive = useResponsive();
   
@@ -289,6 +304,19 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
               
               <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
                 {formatFrequency(habit.expectedFrequency)}
+                {habit.category && (
+                  <span style={{ 
+                    marginLeft: '8px',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    backgroundColor: '#f3e5f5',
+                    color: '#7b1fa2',
+                    fontSize: '12px',
+                    fontWeight: '500'
+                  }}>
+                    📂 {getCategoryLabel(habit.category)}
+                  </span>
+                )}
                 {completionRate !== null && (
                   <span style={{ 
                     marginLeft: '8px',

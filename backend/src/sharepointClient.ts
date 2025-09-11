@@ -119,7 +119,7 @@ export async function getHabits(userId?: string) {
   }
 }
 
-export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
+export async function createHabit(name: string, completedDate?: string, completedDatesStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string, category?: string) {
   await ensureHabitsColumnsLoaded();
   const client = initializeClient();
   
@@ -133,6 +133,7 @@ export async function createHabit(name: string, completedDate?: string, complete
   if (habitsFieldExists('Name')) fields.Name = name || "";
   if (habitsFieldExists('CompletedDates')) fields.CompletedDates = completedDate || completedDatesStr || "";
   if (habitsFieldExists('ExpectedFrequency')) fields.ExpectedFrequency = expectedFrequency || "";
+  if (habitsFieldExists('Category')) fields.Category = category || "";
   if (habitsFieldExists('Tags')) fields.Tags = tagsStr && tagsStr.length ? tagsStr : "";
   if (habitsFieldExists('Notes')) fields.Notes = notesStr && notesStr.length ? notesStr : "[]";
   if (habitsFieldExists('UserId') && userId) fields.UserId = userId;
