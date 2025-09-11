@@ -52,8 +52,9 @@ function EnhancedHabitList({ habits, onEdit, onDelete, onMarkComplete, onAddNote
   
   // Helper function to determine if a habit is recently active (within 7 days)
   const isRecentlyActive = (habit) => {
+    // If habit has no completed dates, treat it as active (newly created habit)
     if (!habit.completedDates || !Array.isArray(habit.completedDates) || habit.completedDates.length === 0) {
-      return false;
+      return true; // Show newly created habits as "active"
     }
     
     const sevenDaysAgo = new Date();

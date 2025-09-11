@@ -179,13 +179,25 @@ function App() {
         newHabit = response.data.data;
       }
       
+      // Normalize the new habit's expected frequency
+      newHabit = {
+        ...newHabit,
+        expectedFrequency: normalizeExpectedFrequency(newHabit.expectedFrequency)
+      };
+      
+      // Add the new habit to the state immediately for instant feedback
       setHabits(prevHabits => {
         const updatedHabits = [...prevHabits, newHabit];
         return updatedHabits;
       });
+      
       setShowAddForm(false);
       
-      await loadHabits();
+      // Optional: Reload habits from server to ensure consistency
+      // But use a small delay to prevent race condition
+      setTimeout(() => {
+        loadHabits();
+      }, 100);
       
     } catch (err) {
       console.error('App.js - Error adding habit:', err);
