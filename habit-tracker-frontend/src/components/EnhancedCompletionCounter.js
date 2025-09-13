@@ -78,7 +78,7 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
         date: new Date().toISOString() // Send full timestamp
       });
       if (onCompletionChange) {
-        onCompletionChange();
+        onCompletionChange(habit.id);
       }
     } catch (error) {
       console.error('Error adding completion:', error);
@@ -93,7 +93,7 @@ function EnhancedCompletionCounter({ habit, onCompletionChange }) {
       setLoading(true);
       await api.delete(`/habits/${habit.id}/completions`);
       if (onCompletionChange) {
-        onCompletionChange();
+        onCompletionChange(habit.id);
       }
     } catch (error) {
       console.error('Error removing completion:', error);

@@ -174,6 +174,7 @@ function App() {
   const handleAddHabit = async (habitData) => {
     try {
       // No need to attach userId - backend gets it from auth token
+      console.log('Adding habit to API:', api.defaults.baseURL);
       const response = await api.post('/habits', habitData);
       
       let newHabit = response.data;
@@ -598,9 +599,11 @@ function App() {
                 onEdit={setEditingHabit}
                 onDelete={handleDeleteHabit}
                 onMarkComplete={handleCompleteHabit}
-                onCompletionChange={() => {
-                  // Don't reload all habits - let optimistic updates handle it
-                  console.log('Completion changed - keeping existing habit list');
+                onCompletionChange={async (habitId) => {
+                  // Reload all habits only if completion changes
+                  // This ensures UI stays in sync with backend
+                  console.log(`Completion changed for habit ${habitId} - refreshing all habits`);
+                  await loadHabits();
                 }}
                 onViewMetrics={(habit) => {
                   setSelectedHabit(habit);

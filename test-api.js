@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const API_URL = 'http://localhost:5000/api';
 
-// Test user credentials (you'll need to register/login first)
+// Test user credentials
 let authToken = '';
 
 async function testFlow() {
@@ -85,6 +85,30 @@ async function testFlow() {
     const finalHabits = await axios.get(`${API_URL}/habits`, { headers });
     console.log('Final habits count:', finalHabits.data.data.length);
     console.log('Final habits:', JSON.stringify(finalHabits.data.data, null, 2));
+    
+    // 9. Simulate page refresh - wait a bit and fetch again
+    console.log('\n10. Simulating page refresh (wait 2 seconds then fetch)...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const refreshHabits = await axios.get(`${API_URL}/habits`, { headers });
+    console.log('Habits after refresh count:', refreshHabits.data.data.length);
+    console.log('Habits after refresh:', JSON.stringify(refreshHabits.data.data, null, 2));
+    
+    // 10. Test completion functionality
+    if (refreshHabits.data.data.length > 0) {
+      const firstHabit = refreshHabits.data.data[0];
+      console.log(`\n11. Testing completion for habit "${firstHabit.name}" (${firstHabit.id})...`);
+      
+      const completionResponse = await axios.post(`${API_URL}/habits/${firstHabit.id}/complete`, {
+        date: new Date().toISOString()
+      }, { headers });
+      console.log('Completion response:', completionResponse.data);
+      
+      // Check if completion was saved
+      console.log('\n12. Checking if completion was saved...');
+      const habitsAfterCompletion = await axios.get(`${API_URL}/habits`, { headers });
+      const updatedHabit = habitsAfterCompletion.data.data.find(h => h.id === firstHabit.id);
+      console.log('Updated habit completions:', updatedHabit?.completedDates || []);
+    }
     
   } catch (error) {
     console.error('Error in test flow:', error.response?.data || error.message);
