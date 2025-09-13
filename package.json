@@ -33,6 +33,7 @@
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
     "agent-base": "^6.0.2",
+    "axios": "^1.12.1",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "cross-env": "^10.0.0",
