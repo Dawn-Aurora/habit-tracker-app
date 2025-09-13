@@ -44,16 +44,30 @@ const dataClient = useMock
         },
         async createHabit(name: string, completedDate?: string, completionsStr?: string, expectedFrequency?: string, userId?: string, category?: string) {
             try {
-                return await sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId, category);
+                console.log('[BACKEND] Attempting SharePoint createHabit...');
+                const result = await sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId, category);
+                console.log(`[BACKEND] SharePoint createHabit succeeded with ID: ${result.id}`);
+                return result;
             } catch (e) {
-                return await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
+                const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+                console.log(`[BACKEND] SharePoint createHabit failed: ${errorMessage}, falling back to mock client`);
+                const result = await mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId);
+                console.log(`[BACKEND] Mock createHabit succeeded with ID: ${result.id}`);
+                return result;
             }
         },
         async updateHabit(id: string, name?: string, completionsStr?: string, tagsStr?: string, notesStr?: string, expectedFrequency?: string, userId?: string) {
             try {
-                return await sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency);
+                console.log(`[BACKEND] Attempting SharePoint updateHabit for ID: ${id}...`);
+                const result = await sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency);
+                console.log(`[BACKEND] SharePoint updateHabit succeeded for ID: ${id}`);
+                return result;
             } catch (e) {
-                return await mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
+                const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+                console.log(`[BACKEND] SharePoint updateHabit failed for ID: ${id}: ${errorMessage}, falling back to mock client`);
+                const result = await mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId);
+                console.log(`[BACKEND] Mock updateHabit succeeded for ID: ${id}`);
+                return result;
             }
         },
         async deleteHabit(id: string) {
@@ -230,7 +244,9 @@ export const createHabit = async (req: Request, res: Response) => {
         }
         
         // Pass frequency to dataClient as expectedFrequency
+        console.log(`[CONTROLLER] Creating habit "${sanitizedName}" for user ${userId}`);
         const result = await dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId, category);
+        console.log(`[CONTROLLER] Habit created with ID: ${result.id}, type: ${typeof result.id}`);
         
         const newHabit = {
             id: result.id,

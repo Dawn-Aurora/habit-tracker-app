@@ -151,17 +151,26 @@ var dataClient = useMock
         },
         createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId, category) {
             return __awaiter(this, void 0, void 0, function () {
-                var e_2;
+                var result, e_2, errorMessage, result;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             _a.trys.push([0, 2, , 4]);
+                            console.log('[BACKEND] Attempting SharePoint createHabit...');
                             return [4 /*yield*/, sharepointClient.createHabit(name, completedDate, completionsStr, '', '', expectedFrequency, userId, category)];
-                        case 1: return [2 /*return*/, _a.sent()];
+                        case 1:
+                            result = _a.sent();
+                            console.log("[BACKEND] SharePoint createHabit succeeded with ID: ".concat(result.id));
+                            return [2 /*return*/, result];
                         case 2:
                             e_2 = _a.sent();
+                            errorMessage = e_2 instanceof Error ? e_2.message : 'Unknown error';
+                            console.log("[BACKEND] SharePoint createHabit failed: ".concat(errorMessage, ", falling back to mock client"));
                             return [4 /*yield*/, mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId)];
-                        case 3: return [2 /*return*/, _a.sent()];
+                        case 3:
+                            result = _a.sent();
+                            console.log("[BACKEND] Mock createHabit succeeded with ID: ".concat(result.id));
+                            return [2 /*return*/, result];
                         case 4: return [2 /*return*/];
                     }
                 });
@@ -169,17 +178,26 @@ var dataClient = useMock
         },
         updateHabit: function (id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function () {
-                var e_3;
+                var result, e_3, errorMessage, result;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
                             _a.trys.push([0, 2, , 4]);
+                            console.log("[BACKEND] Attempting SharePoint updateHabit for ID: ".concat(id, "..."));
                             return [4 /*yield*/, sharepointClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency)];
-                        case 1: return [2 /*return*/, _a.sent()];
+                        case 1:
+                            result = _a.sent();
+                            console.log("[BACKEND] SharePoint updateHabit succeeded for ID: ".concat(id));
+                            return [2 /*return*/, result];
                         case 2:
                             e_3 = _a.sent();
+                            errorMessage = e_3 instanceof Error ? e_3.message : 'Unknown error';
+                            console.log("[BACKEND] SharePoint updateHabit failed for ID: ".concat(id, ": ").concat(errorMessage, ", falling back to mock client"));
                             return [4 /*yield*/, mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId)];
-                        case 3: return [2 /*return*/, _a.sent()];
+                        case 3:
+                            result = _a.sent();
+                            console.log("[BACKEND] Mock updateHabit succeeded for ID: ".concat(id));
+                            return [2 /*return*/, result];
                         case 4: return [2 /*return*/];
                     }
                 });
@@ -355,9 +373,12 @@ var createHabit = function (req, res) { return __awaiter(void 0, void 0, void 0,
                 if (tags && Array.isArray(tags)) {
                     tagsToStore = tags.join(',');
                 }
+                // Pass frequency to dataClient as expectedFrequency
+                console.log("[CONTROLLER] Creating habit \"".concat(sanitizedName, "\" for user ").concat(userId));
                 return [4 /*yield*/, dataClient.createHabit(sanitizedName, undefined, "", frequencyToStore, userId, category)];
             case 1:
                 result = _c.sent();
+                console.log("[CONTROLLER] Habit created with ID: ".concat(result.id, ", type: ").concat(typeof result.id));
                 newHabit = {
                     id: result.id,
                     name: getHabitName(result, sanitizedName),

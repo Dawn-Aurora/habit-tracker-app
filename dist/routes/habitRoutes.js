@@ -75,7 +75,7 @@ var router = express_1.default.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', auth_1.optionalAuth, habitController.getHabits);
+router.get('/', auth_1.authenticateToken, habitController.getHabits);
 /**
  * @swagger
  * /habits:
@@ -110,7 +110,7 @@ router.get('/', auth_1.optionalAuth, habitController.getHabits);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', auth_1.optionalAuth, habitController.createHabit);
+router.post('/', auth_1.authenticateToken, habitController.createHabit);
 /**
  * @swagger
  * /habits/{id}:
@@ -159,7 +159,7 @@ router.post('/', auth_1.optionalAuth, habitController.createHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', auth_1.optionalAuth, habitController.updateHabit);
+router.put('/:id', auth_1.authenticateToken, habitController.updateHabit);
 /**
  * @swagger
  * /habits/{id}:
@@ -254,7 +254,7 @@ router.delete('/:id', auth_1.authenticateToken, habitController.deleteHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/complete', auth_1.optionalAuth, habitController.markHabitCompleted);
+router.post('/:id/complete', auth_1.authenticateToken, habitController.markHabitCompleted);
 /**
  * @swagger
  * /habits/{id}/note:
@@ -343,7 +343,7 @@ router.post('/:id/note', auth_1.authenticateToken, habitController.addHabitNote)
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/by-tag', auth_1.optionalAuth, habitController.getHabitsByTag);
+router.get('/by-tag', auth_1.authenticateToken, habitController.getHabitsByTag);
 /**
  * @swagger
  * /habits/{id}/metrics:
@@ -380,7 +380,7 @@ router.get('/by-tag', auth_1.optionalAuth, habitController.getHabitsByTag);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id/metrics', auth_1.optionalAuth, habitController.getHabitMetrics);
+router.get('/:id/metrics', auth_1.authenticateToken, habitController.getHabitMetrics);
 // Enhanced frequency system routes
 /**
  * @swagger

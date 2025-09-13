@@ -5,6 +5,9 @@ let habits: any[] = [
   // No default habits - users start with a clean slate
 ];
 
+// Use integer IDs to match SharePoint behavior
+let nextId = 1;
+
 export async function getHabits(userId?: string) {
   const filteredHabits = userId ? habits.filter(h => h.userId === userId) : habits;
   
@@ -32,7 +35,7 @@ export async function createHabit(name: string, completedDate?: string, completi
     completionsArr = [completedDate];
   }
   const newHabit = {
-    id: uuidv4(),
+    id: String(nextId++), // Use integer IDs converted to string to match SharePoint behavior
     name,
     completions: completionsArr,
     tags: [],
