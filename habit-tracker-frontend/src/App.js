@@ -72,11 +72,12 @@ function App() {
         ...h,
         expectedFrequency: normalizeExpectedFrequency(h.expectedFrequency)
       }));
+      console.log('Loaded habits from server:', normalized.length);
       setHabits(normalized);
     } catch (err) {
       console.error('App.js - Error loading habits:', err);
       setError('Failed to load habits');
-      setHabits([]);
+      // Don't clear existing habits on error - keep what we have
     }
   }, []);
 
@@ -186,19 +187,17 @@ function App() {
         expectedFrequency: normalizeExpectedFrequency(newHabit.expectedFrequency)
       };
       
-      // Add the new habit to the state immediately for instant feedback
+      // Add the new habit to the state - this should be the final state update
       setHabits(prevHabits => {
         const updatedHabits = [...prevHabits, newHabit];
+        console.log('Adding habit to state. Previous count:', prevHabits.length, 'New count:', updatedHabits.length);
         return updatedHabits;
       });
       
       setShowAddForm(false);
       
-      // Reload habits from server to ensure consistency
-      // Small delay to prevent race condition and allow UI to update
-      setTimeout(() => {
-        loadHabits();
-      }, 200);
+      // Don't auto-reload habits to avoid overriding the optimistic update
+      // The user can manually refresh if needed
       
     } catch (err) {
       console.error('App.js - Error adding habit:', err);
@@ -215,7 +214,23 @@ function App() {
     }
     try {
       await api.post(`/habits/${habitId}/complete`);
-      loadHabits();
+      
+      // Update just this habit instead of reloading all habits
+      setHabits(prevHabits => 
+        prevHabits.map(habit => {
+          if (habit.id === habitId) {
+            const today = new Date().toISOString().split('T')[0];
+            const completedDates = habit.completedDates || [];
+            if (!completedDates.includes(today)) {
+              return {
+                ...habit,
+                completedDates: [...completedDates, today]
+              };
+            }
+          }
+          return habit;
+        })
+      );
     } catch (err) {
       console.error('Error completing habit:', err);
       setError('Failed to complete habit');
@@ -583,7 +598,10 @@ function App() {
                 onEdit={setEditingHabit}
                 onDelete={handleDeleteHabit}
                 onMarkComplete={handleCompleteHabit}
-                onCompletionChange={loadHabits}
+                onCompletionChange={() => {
+                  // Don't reload all habits - let optimistic updates handle it
+                  console.log('Completion changed - keeping existing habit list');
+                }}
                 onViewMetrics={(habit) => {
                   setSelectedHabit(habit);
                   setShowMetrics(true);
