@@ -4,7 +4,7 @@ var Habit = /** @class */ (function () {
     function Habit(id, name, frequency, tags, expectedFrequency, userId, category) {
         if (tags === void 0) { tags = []; }
         this.id = id;
-        this.userId = userId || ''; // Default to empty string for backward compatibility
+        this.userId = userId || '';
         this.name = name;
         this.frequency = frequency;
         this.completed = false;

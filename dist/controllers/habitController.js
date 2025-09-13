@@ -89,13 +89,10 @@ var dataClient = useMock
     ? {
         getHabits: function (userId) {
             return __awaiter(this, void 0, void 0, function () {
-                var allHabits;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, mockDataClient.getHabits()];
-                        case 1:
-                            allHabits = _a.sent();
-                            return [2 /*return*/, filterHabitsByUser(allHabits, userId)];
+                        case 0: return [4 /*yield*/, mockDataClient.getHabits(userId)];
+                        case 1: return [2 /*return*/, _a.sent()];
                     }
                 });
             });
