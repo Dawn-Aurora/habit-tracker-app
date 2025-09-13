@@ -172,7 +172,12 @@ function App() {
 
   const handleAddHabit = async (habitData) => {
     try {
-      const response = await api.post('/habits', habitData);
+      // Attach userId to habitData
+      const habitWithUser = {
+        ...habitData,
+        userId: user && user.id ? user.id : undefined
+      };
+      const response = await api.post('/habits', habitWithUser);
       
       let newHabit = response.data;
       if (response.data && response.data.data) {
