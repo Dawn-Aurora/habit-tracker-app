@@ -39,7 +39,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', optionalAuth, habitController.getHabits);
+router.get('/', authenticateToken, habitController.getHabits);
 
 /**
  * @swagger
@@ -75,7 +75,7 @@ router.get('/', optionalAuth, habitController.getHabits);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', optionalAuth, habitController.createHabit);
+router.post('/', authenticateToken, habitController.createHabit);
 
 /**
  * @swagger
@@ -125,7 +125,7 @@ router.post('/', optionalAuth, habitController.createHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', optionalAuth, habitController.updateHabit);
+router.put('/:id', authenticateToken, habitController.updateHabit);
 
 /**
  * @swagger
@@ -222,7 +222,7 @@ router.delete('/:id', authenticateToken, habitController.deleteHabit);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/complete', optionalAuth, habitController.markHabitCompleted);
+router.post('/:id/complete', authenticateToken, habitController.markHabitCompleted);
 
 /**
  * @swagger
@@ -313,7 +313,7 @@ router.post('/:id/note', authenticateToken, habitController.addHabitNote);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/by-tag', optionalAuth, habitController.getHabitsByTag);
+router.get('/by-tag', authenticateToken, habitController.getHabitsByTag);
 
 /**
  * @swagger
@@ -351,7 +351,7 @@ router.get('/by-tag', optionalAuth, habitController.getHabitsByTag);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:id/metrics', optionalAuth, habitController.getHabitMetrics);
+router.get('/:id/metrics', authenticateToken, habitController.getHabitMetrics);
 
 // Enhanced frequency system routes
 /**
