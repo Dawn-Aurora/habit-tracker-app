@@ -29,7 +29,7 @@ A **production-ready** full-stack habit tracking application with enterprise-gra
 - **Duplicate Prevention**: Proactive duplicate habit detection with user guidance
 - **Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
 
-### 🛠 **Production-Ready Architecture**
+### **Production-Ready Architecture**
 - **RESTful API**: Well-documented backend API with comprehensive testing
 - **TypeScript**: Full type safety with modern development practices  
 - **Centralized Logging**: Environment-aware debug output for production monitoring
@@ -353,3 +353,6 @@ Contributions are welcome! Please follow these steps:
 
 ## License
 This project is licensed under the MIT License.
+
+## Credits
+This project is partially built with help from GitHub Copilot.
