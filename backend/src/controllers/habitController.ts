@@ -36,8 +36,44 @@ const dataClient = useMock
     : {
         async getHabits(userId?: string) {
             try {
-                return await sharepointClient.getHabits(userId);
+                console.log(`[BACKEND] Attempting to get habits from both SharePoint and Mock for user: ${userId}`);
+                
+                // Try to get habits from both sources and merge them
+                let sharepointHabits = [];
+                let mockHabits = [];
+                
+                // Get SharePoint habits
+                try {
+                    sharepointHabits = await sharepointClient.getHabits(userId) || [];
+                    console.log(`[BACKEND] SharePoint returned ${sharepointHabits.length} habits`);
+                } catch (e) {
+                    console.log(`[BACKEND] SharePoint getHabits failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+                }
+                
+                // Get Mock habits
+                try {
+                    const allMockHabits = await mockDataClient.getHabits();
+                    mockHabits = filterHabitsByUser(allMockHabits, userId);
+                    console.log(`[BACKEND] Mock client returned ${mockHabits.length} habits for user ${userId}`);
+                } catch (e) {
+                    console.log(`[BACKEND] Mock getHabits failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+                }
+                
+                // Merge habits from both sources, avoiding duplicates by ID
+                const allHabits = [...sharepointHabits];
+                const existingIds = new Set(sharepointHabits.map((h: any) => h.id));
+                
+                for (const mockHabit of mockHabits) {
+                    if (!existingIds.has(mockHabit.id)) {
+                        allHabits.push(mockHabit);
+                    }
+                }
+                
+                console.log(`[BACKEND] Total merged habits: ${allHabits.length} (${sharepointHabits.length} from SharePoint, ${mockHabits.length} from Mock)`);
+                return allHabits;
+                
             } catch (e) {
+                console.log(`[BACKEND] Complete getHabits failure, falling back to mock only: ${e instanceof Error ? e.message : 'Unknown error'}`);
                 const allHabits = await mockDataClient.getHabits();
                 return filterHabitsByUser(allHabits, userId);
             }

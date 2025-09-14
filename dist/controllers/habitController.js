@@ -68,6 +68,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getHabitCompletionsForDate = exports.removeHabitCompletion = exports.addHabitCompletion = exports.getHabitMetrics = exports.getHabitsByTag = exports.addHabitNote = exports.markHabitCompleted = exports.deleteHabit = exports.updateHabit = exports.createHabit = exports.getHabits = void 0;
 var dotenv = __importStar(require("dotenv"));
@@ -131,27 +140,64 @@ var dataClient = useMock
     : {
         getHabits: function (userId) {
             return __awaiter(this, void 0, void 0, function () {
-                var e_1, allHabits;
+                var sharepointHabits, mockHabits, e_1, allMockHabits, e_2, allHabits, existingIds, _i, mockHabits_1, mockHabit, e_3, allHabits;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            _a.trys.push([0, 2, , 4]);
+                            _a.trys.push([0, 8, , 10]);
+                            console.log("[BACKEND] Attempting to get habits from both SharePoint and Mock for user: ".concat(userId));
+                            sharepointHabits = [];
+                            mockHabits = [];
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 3, , 4]);
                             return [4 /*yield*/, sharepointClient.getHabits(userId)];
-                        case 1: return [2 /*return*/, _a.sent()];
                         case 2:
-                            e_1 = _a.sent();
-                            return [4 /*yield*/, mockDataClient.getHabits()];
+                            sharepointHabits = (_a.sent()) || [];
+                            console.log("[BACKEND] SharePoint returned ".concat(sharepointHabits.length, " habits"));
+                            return [3 /*break*/, 4];
                         case 3:
+                            e_1 = _a.sent();
+                            console.log("[BACKEND] SharePoint getHabits failed: ".concat(e_1 instanceof Error ? e_1.message : 'Unknown error'));
+                            return [3 /*break*/, 4];
+                        case 4:
+                            _a.trys.push([4, 6, , 7]);
+                            return [4 /*yield*/, mockDataClient.getHabits()];
+                        case 5:
+                            allMockHabits = _a.sent();
+                            mockHabits = filterHabitsByUser(allMockHabits, userId);
+                            console.log("[BACKEND] Mock client returned ".concat(mockHabits.length, " habits for user ").concat(userId));
+                            return [3 /*break*/, 7];
+                        case 6:
+                            e_2 = _a.sent();
+                            console.log("[BACKEND] Mock getHabits failed: ".concat(e_2 instanceof Error ? e_2.message : 'Unknown error'));
+                            return [3 /*break*/, 7];
+                        case 7:
+                            allHabits = __spreadArray([], sharepointHabits, true);
+                            existingIds = new Set(sharepointHabits.map(function (h) { return h.id; }));
+                            for (_i = 0, mockHabits_1 = mockHabits; _i < mockHabits_1.length; _i++) {
+                                mockHabit = mockHabits_1[_i];
+                                if (!existingIds.has(mockHabit.id)) {
+                                    allHabits.push(mockHabit);
+                                }
+                            }
+                            console.log("[BACKEND] Total merged habits: ".concat(allHabits.length, " (").concat(sharepointHabits.length, " from SharePoint, ").concat(mockHabits.length, " from Mock)"));
+                            return [2 /*return*/, allHabits];
+                        case 8:
+                            e_3 = _a.sent();
+                            console.log("[BACKEND] Complete getHabits failure, falling back to mock only: ".concat(e_3 instanceof Error ? e_3.message : 'Unknown error'));
+                            return [4 /*yield*/, mockDataClient.getHabits()];
+                        case 9:
                             allHabits = _a.sent();
                             return [2 /*return*/, filterHabitsByUser(allHabits, userId)];
-                        case 4: return [2 /*return*/];
+                        case 10: return [2 /*return*/];
                     }
                 });
             });
         },
         createHabit: function (name, completedDate, completionsStr, expectedFrequency, userId, category) {
             return __awaiter(this, void 0, void 0, function () {
-                var result, e_2, errorMessage, result;
+                var result, e_4, errorMessage, result;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -163,8 +209,8 @@ var dataClient = useMock
                             console.log("[BACKEND] SharePoint createHabit succeeded with ID: ".concat(result.id));
                             return [2 /*return*/, result];
                         case 2:
-                            e_2 = _a.sent();
-                            errorMessage = e_2 instanceof Error ? e_2.message : 'Unknown error';
+                            e_4 = _a.sent();
+                            errorMessage = e_4 instanceof Error ? e_4.message : 'Unknown error';
                             console.log("[BACKEND] SharePoint createHabit failed: ".concat(errorMessage, ", falling back to mock client"));
                             return [4 /*yield*/, mockDataClient.createHabit(name, completedDate, completionsStr, expectedFrequency, userId)];
                         case 3:
@@ -178,7 +224,7 @@ var dataClient = useMock
         },
         updateHabit: function (id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId) {
             return __awaiter(this, void 0, void 0, function () {
-                var result, e_3, errorMessage, result;
+                var result, e_5, errorMessage, result;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -190,8 +236,8 @@ var dataClient = useMock
                             console.log("[BACKEND] SharePoint updateHabit succeeded for ID: ".concat(id));
                             return [2 /*return*/, result];
                         case 2:
-                            e_3 = _a.sent();
-                            errorMessage = e_3 instanceof Error ? e_3.message : 'Unknown error';
+                            e_5 = _a.sent();
+                            errorMessage = e_5 instanceof Error ? e_5.message : 'Unknown error';
                             console.log("[BACKEND] SharePoint updateHabit failed for ID: ".concat(id, ": ").concat(errorMessage, ", falling back to mock client"));
                             return [4 /*yield*/, mockDataClient.updateHabit(id, name, completionsStr, tagsStr, notesStr, expectedFrequency, userId)];
                         case 3:
@@ -205,7 +251,7 @@ var dataClient = useMock
         },
         deleteHabit: function (id) {
             return __awaiter(this, void 0, void 0, function () {
-                var e_4;
+                var e_6;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -213,7 +259,7 @@ var dataClient = useMock
                             return [4 /*yield*/, sharepointClient.deleteHabit(id)];
                         case 1: return [2 /*return*/, _a.sent()];
                         case 2:
-                            e_4 = _a.sent();
+                            e_6 = _a.sent();
                             return [4 /*yield*/, mockDataClient.deleteHabit(id)];
                         case 3: return [2 /*return*/, _a.sent()];
                         case 4: return [2 /*return*/];
