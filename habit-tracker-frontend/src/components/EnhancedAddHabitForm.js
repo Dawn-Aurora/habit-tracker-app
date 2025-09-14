@@ -66,7 +66,20 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
         })
         .catch(err => {
           console.error('EnhancedAddHabitForm - Error adding habit:', err);
-          setError('Error adding habit: ' + (err.response?.data?.message || err.message));
+          
+          // Enhanced error message based on error type
+          let errorMsg = 'Error adding habit';
+          if (err.response?.data?.message) {
+            errorMsg = err.response.data.message;
+          } else if (err.message?.includes('Network Error') || err.code === 'NETWORK_ERROR') {
+            errorMsg = 'Unable to connect to server. Please check your internet connection and try again.';
+          } else if (err.message?.includes('timeout')) {
+            errorMsg = 'Request timed out. Please try again.';
+          } else if (err.message) {
+            errorMsg = err.message;
+          }
+          
+          setError(errorMsg);
         })
         .finally(() => {
           setLoading(false);
@@ -87,7 +100,20 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
         })
         .catch(err => {
           console.error('EnhancedAddHabitForm - Direct API call error:', err);
-          setError('Error adding habit: ' + (err.response?.data?.message || err.message));
+          
+          // Enhanced error message based on error type
+          let errorMsg = 'Error adding habit';
+          if (err.response?.data?.message) {
+            errorMsg = err.response.data.message;
+          } else if (err.message?.includes('Network Error') || err.code === 'NETWORK_ERROR') {
+            errorMsg = 'Unable to connect to server. Please check your internet connection and try again.';
+          } else if (err.message?.includes('timeout')) {
+            errorMsg = 'Request timed out. Please try again.';
+          } else if (err.message) {
+            errorMsg = err.message;
+          }
+          
+          setError(errorMsg);
         })
         .finally(() => {
           setLoading(false);
@@ -314,8 +340,8 @@ function EnhancedAddHabitForm({ onAddHabit, onHabitAdded, onCancel }) {
             </>
           ) : (
             <>
-              <span>✨</span>
-              <span>Add Habit</span>
+              <span>{error && (error.includes('network') || error.includes('connection')) ? '🔄' : '✨'}</span>
+              <span>{error && (error.includes('network') || error.includes('connection')) ? 'Retry' : 'Add Habit'}</span>
             </>
           )}
         </button>

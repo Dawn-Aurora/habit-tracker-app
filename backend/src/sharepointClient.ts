@@ -94,7 +94,9 @@ export async function getHabits(userId?: string) {
     if (userId && habitsFieldExists('UserId')) {
       apiUrl += `&$filter=fields/UserId eq '${userId}'`;
     } else if (userId && !habitsFieldExists('UserId')) {
-      console.log("⚠️ UserId field not found in habits list - returning all habits");
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn("⚠️ UserId field not found in habits list - returning all habits");
+      }
     }
     
     const result = await client

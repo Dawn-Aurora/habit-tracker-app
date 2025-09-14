@@ -27,7 +27,7 @@ function CompletionCounter({ habit, date = new Date().toISOString().slice(0, 10)
     if (habit.id) {
       fetchCompletionCount();
     }
-  }, [habit.id, date]);
+  }, [habit.id, habit.completedDates, date]);
 
   const handleIncrement = async () => {
     if (loading) return;

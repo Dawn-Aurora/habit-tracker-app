@@ -72,7 +72,7 @@ function App() {
         ...h,
         expectedFrequency: normalizeExpectedFrequency(h.expectedFrequency)
       }));
-      console.log('Loaded habits from server:', normalized.length);
+      // Debug log removed for production
       setHabits(normalized);
     } catch (err) {
       console.error('App.js - Error loading habits:', err);
@@ -174,7 +174,7 @@ function App() {
   const handleAddHabit = async (habitData) => {
     try {
       // No need to attach userId - backend gets it from auth token
-      console.log('Adding habit to API:', api.defaults.baseURL);
+      // Debug log removed
       const response = await api.post('/habits', habitData);
       
       let newHabit = response.data;
@@ -191,7 +191,7 @@ function App() {
       // Add the new habit to the state - this should be the final state update
       setHabits(prevHabits => {
         const updatedHabits = [...prevHabits, newHabit];
-        console.log('Adding habit to state. Previous count:', prevHabits.length, 'New count:', updatedHabits.length);
+        // Debug log removed
         return updatedHabits;
       });
       
@@ -602,7 +602,7 @@ function App() {
                 onCompletionChange={async (habitId) => {
                   // Reload all habits only if completion changes
                   // This ensures UI stays in sync with backend
-                  console.log(`Completion changed for habit ${habitId} - refreshing all habits`);
+                  // Debug log removed
                   await loadHabits();
                 }}
                 onViewMetrics={(habit) => {

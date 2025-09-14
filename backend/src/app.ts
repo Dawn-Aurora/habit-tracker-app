@@ -1,14 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-if (!process.env.USE_MOCK_DATA) {
-  if (process.env.DATA_CLIENT && process.env.DATA_CLIENT.toLowerCase() === 'mock') {
-    process.env.USE_MOCK_DATA = 'true';
-  } else if (process.env.DATA_CLIENT && process.env.DATA_CLIENT.toLowerCase() === 'sharepoint') {
-    process.env.USE_MOCK_DATA = 'false';
-  }
-}
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -16,16 +5,16 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import habitRouter from './routes/habitRoutes';
 import authRouter from './routes/authRoutes';
+import { config, validateEnvironment, logConfiguration } from './config';
+
+// Validate environment configuration on startup
+validateEnvironment();
+logConfiguration();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-if (process.env.NODE_ENV === 'production') {
-  const jwtSecret = process.env.JWT_SECRET || '';
-  if (!jwtSecret || jwtSecret.includes('your-super-secret-jwt-key')) {
-    console.warn('[SECURITY] Weak or default JWT_SECRET detected in production. Set a strong, random secret in environment variables.');
-  }
-}
+// Trust proxy for Azure deployment to fix rate limiting warnings
+app.set('trust proxy', true);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -41,29 +30,16 @@ app.use(helmet({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: config.rateLimit.windowMs,
+  max: config.rateLimit.max,
+  message: config.rateLimit.message
 });
 
 app.use(limiter);
 
-// CORS configuration for Azure deployment
+// CORS configuration
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        process.env.FRONTEND_URL || 'https://witty-sand-040223500.2.azurestaticapps.net',
-        'https://witty-sand-040223500.2.azurestaticapps.net',
-        'https://habit-tracker-frontend.azurestaticapps.net',
-        'https://your-custom-domain.com'
-      ]
-    : [
-        'http://localhost:3000', 
-        'http://localhost:3001', 
-        'http://localhost:5000',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:5000'
-      ],
+  origin: config.frontend.getAllowedOrigins(),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -75,7 +51,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files based on environment
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = config.nodeEnv === 'production';
 
 // For Azure deployment, we only serve API endpoints (frontend is deployed separately)
 if (!isProduction) {
@@ -112,8 +88,8 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    dataClient: process.env.DATA_CLIENT || 'unknown'
+    environment: config.nodeEnv,
+    dataClient: config.dataClient
   });
 });
 
@@ -126,7 +102,7 @@ app.get('*', (req, res) => {
     // In production, redirect to frontend URL or return API info
     res.json({ 
       message: 'Habit Tracker API Server',
-      frontend: 'https://witty-sand-040223500.2.azurestaticapps.net',
+      frontend: config.frontend.url,
       api: '/api'
     });
   } else {
